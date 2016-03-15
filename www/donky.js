@@ -5,6 +5,6 @@ module.exports = {
         cordova.exec(successCallback, errorCallback, "donky", "greet", [name]);
     },
     deviceId: function (successCallback, errorCallback) {
-        cordova.exec(successCallback, errorCallback, "donky", "deviceId");
+        cordova.exec(successCallback, errorCallback, "donky", "deviceId",[]);
     }
 };

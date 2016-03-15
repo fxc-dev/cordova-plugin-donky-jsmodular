@@ -1,11 +1,31 @@
-package com.example.plugin;
+package com.donky.plugin;
+
 
 import org.apache.cordova.*;
 import org.json.JSONArray;
 import org.json.JSONException;
 import android.provider.Settings;
 
-public class Hello extends CordovaPlugin {
+public class Donky extends CordovaPlugin {
+
+
+    /**
+     * Constructor.
+     */
+    public Donky() {
+    }
+
+    /**
+     * Sets the context of the Command. This can then be used to do things like
+     * get file paths associated with the Activity.
+     *
+     * @param cordova The context of the main Activity.
+     * @param webView The CordovaWebView Cordova is running in.
+     */
+    public void initialize(CordovaInterface cordova, CordovaWebView webView) {
+        super.initialize(cordova, webView);
+    }
+
 
     /**
      * Executes the request and returns PluginResult.
@@ -15,7 +35,6 @@ public class Hello extends CordovaPlugin {
      * @param callbackContext   The callback id used when calling back into JavaScript.
      * @return                  True if the action was valid, false if not.
      */    
-    @Override
     public boolean execute(String action, JSONArray data, CallbackContext callbackContext) throws JSONException {
 
         if (action.equals("greet")) {
@@ -45,7 +64,7 @@ public class Hello extends CordovaPlugin {
      *
      * @return
      */
-    public String getUuid() {
+    private String getUuid() {
         String uuid = Settings.Secure.getString(this.cordova.getActivity().getContentResolver(), android.provider.Settings.Secure.ANDROID_ID);
         return uuid;
     }

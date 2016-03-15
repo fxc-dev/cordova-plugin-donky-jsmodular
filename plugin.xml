@@ -1,31 +1,33 @@
 <?xml version="1.0" encoding="utf-8"?>
-<plugin xmlns="http://www.phonegap.com/ns/plugins/1.0"
-        id="cordova-plugin-donky"
-        version="0.7.0">
+<plugin 
+xmlns="http://apache.org/cordova/ns/plugins/1.0"
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    id="cordova-plugin-donky"
+    version="1.0.0">
 
-  <name>Donky</name>
-
-  <engines>
-    <engine name="cordova" version=">=3.4.0"/>
-  </engines>
-
-  <asset src="www/donky.js" target="js/donky.js"/>
+    <name>Donky</name>
+    <description>Cordova Donky Plugin</description>
+    <license>Apache 2.0</license>
+    <keywords>cordova,donky</keywords>
 
   <js-module src="www/donky.js" name="donky">
     <clobbers target="donky" />
   </js-module>
 
-  <platform name="android">
 
-    <config-file target="res/xml/config.xml" parent="/*">
-      <feature name="donky">
-        <param name="android-package" value="com.example.plugin.Hello"/>
-      </feature>
-    </config-file>
+    <!-- android -->
+    <platform name="android">
+        <config-file target="res/xml/config.xml" parent="/*">
+            <feature name="donky" >
+                <param name="android-package" value="com.donky.plugin.Donky"/>
+            </feature>
+        </config-file>
 
-    <source-file src="src/android/Hello.java" target-dir="src/com/example/plugin/"/>
-  </platform>
+        <source-file src="src/android/Donky.java" target-dir="src/com/donky/plugin/" />
+    </platform>
 
+  
+  
   <platform name="ios">
     
     <config-file target="config.xml" parent="/widget">
