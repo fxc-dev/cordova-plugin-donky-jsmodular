@@ -15,4 +15,17 @@
     [self.commandDelegate sendPluginResult:result callbackId:command.callbackId];
 }
 
+- (void)deviceId:(CDVInvokedUrlCommand*)command
+{
+
+    NSString* deviceId =  [[NSUUID UUID] UUIDString];
+
+    CDVPluginResult* result = [CDVPluginResult
+                               resultWithStatus:CDVCommandStatus_OK
+                               messageAsString:deviceId];
+
+    [self.commandDelegate sendPluginResult:result callbackId:command.callbackId];
+}
+
+
 @end
