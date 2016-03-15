@@ -1,6 +1,9 @@
-#import "HWPHello.h"
+#import "Donky.h"
+#import "DNKeychainHelper.h"
 
-@implementation HWPHello
+static NSString *const DNDeviceID = @"DeviceID"; 
+
+@implementation Donky
 
 - (void)greet:(CDVInvokedUrlCommand*)command
 {
@@ -17,8 +20,17 @@
 
 - (void)deviceId:(CDVInvokedUrlCommand*)command
 {
+    NSString *deviceId = [DNKeychainHelper objectForKey:DNDeviceID];
+    
+    NSLog(@"DNKeychainHelper returned deviceId: %@", deviceId);
+    
+    if(deviceId == nil){
+        deviceId = [self generateGUID];
+        NSLog(@"Created a new GUID for the deviceId : %@", deviceId);
+        [DNKeychainHelper saveObjectToKeychain:deviceId withKey:DNDeviceID];
+    }  
 
-    NSString* deviceId =  [[NSUUID UUID] UUIDString];
+    NSLog(@"returning deviceId: %@", deviceId);
 
     CDVPluginResult* result = [CDVPluginResult
                                resultWithStatus:CDVCommandStatus_OK
@@ -27,5 +39,13 @@
     [self.commandDelegate sendPluginResult:result callbackId:command.callbackId];
 }
 
+- (NSString *)generateGUID {
+
+    CFUUIDRef uuidRef = CFUUIDCreate(NULL);
+    NSString *guid = (NSString *)CFBridgingRelease(CFUUIDCreateString(NULL, uuidRef));
+    CFRelease(uuidRef);
+
+    return guid;
+}
 
 @end

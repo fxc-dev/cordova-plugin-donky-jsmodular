@@ -1,6 +1,6 @@
 #import <Cordova/CDV.h>
 
-@interface HWPHello : CDVPlugin
+@interface Donky : CDVPlugin
 
 - (void) greet:(CDVInvokedUrlCommand*)command;
 - (void) deviceId:(CDVInvokedUrlCommand*)command;

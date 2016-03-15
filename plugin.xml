@@ -3,7 +3,7 @@
         id="cordova-plugin-donky"
         version="0.7.0">
 
-  <name>Hello</name>
+  <name>Donky</name>
 
   <engines>
     <engine name="cordova" version=">=3.4.0"/>
@@ -30,12 +30,19 @@
     
     <config-file target="config.xml" parent="/widget">
       <feature name="donky">
-        <param name="ios-package" value="HWPHello" />
+        <param name="ios-package" value="Donky" />
       </feature>
     </config-file>
 
-    <header-file src="src/ios/HWPHello.h" target-dir="HelloPlugin"/>
-    <source-file src="src/ios/HWPHello.m" target-dir="HelloPlugin"/>
+    <header-file src="src/ios/Donky.h" target-dir="DonkyPlugin"/>
+    <source-file src="src/ios/Donky.m" target-dir="DonkyPlugin"/>
+
+    <header-file src="src/ios/DNKeychainHelper.h" target-dir="DonkyPlugin"/>
+    <source-file src="src/ios/DNKeychainHelper.m" target-dir="DonkyPlugin"/>
+
+    <header-file src="src/ios/DNKeychainItemWrapper.h" target-dir="DonkyPlugin"/>
+    <source-file src="src/ios/DNKeychainItemWrapper.m" target-dir="DonkyPlugin"/>
+
   </platform>
 
 </plugin>
