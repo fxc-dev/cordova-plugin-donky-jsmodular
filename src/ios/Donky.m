@@ -7,6 +7,17 @@ static NSString *const DNDeviceID = @"DeviceID";
 
 @implementation Donky
 
+static UIWebView* webView;
+
+- (void) pluginInitialize;
+{
+    NSLog(@"DonkyPlugin:pluginInitialize");
+    
+    if (self.webViewEngine != nil) {
+        webView = (UIWebView *)self.webViewEngine.engineWebView;
+    }
+}
+
 - (void)greet:(CDVInvokedUrlCommand*)command
 {
 
@@ -100,5 +111,23 @@ static NSString *const DNDeviceID = @"DeviceID";
 
     [self.commandDelegate sendPluginResult:result callbackId:command.callbackId];
 }
+
++ (void) notify:(NSString *)event withData:(NSString *)data
+{
+    
+    if(webView){
+        NSString* jsString = [NSString stringWithFormat:@"document.%@(%@)", event, data];
+        
+        if ([webView respondsToSelector:@selector(stringByEvaluatingJavaScriptFromString:)]) {
+            // Cordova-iOS pre-4
+            [webView performSelectorOnMainThread:@selector(stringByEvaluatingJavaScriptFromString:) withObject:jsString waitUntilDone:NO];
+        } else {
+            // Cordova-iOS 4+
+            [webView performSelectorOnMainThread:@selector(evaluateJavaScript:completionHandler:) withObject:jsString waitUntilDone:NO];
+        }
+    }
+    
+}
+
 
 @end

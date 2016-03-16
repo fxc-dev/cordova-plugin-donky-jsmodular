@@ -1,0 +1,13 @@
+//For all standard push notifications, including push, where %1$@ is the senders name and %2$@ is the message preview:
+"MSG_PRV" = "%2$@";
+
+//For new device notifications, where %2$@ is the description of the new device:
+"MSG_NEWDVC" = "A new %2$@ has been registered against your account; if you did not register this device please let us know immediately.";
+
+//For Donky SDK V2.6.5.4 and above, there are additional keys to differentiate the types of messages:
+
+//Chat Messages, where %1$@ is the senders name and %2$@ is the message preview:
+"MSG_CHAT" = "%1$@ said: %2$@";
+
+//Rich Messages, where %1$@ is the senders name and %2$@ is the message preview:
+"MSG_RICH" = "%2$@";
