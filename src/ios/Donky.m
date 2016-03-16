@@ -1,5 +1,7 @@
 #import "Donky.h"
 #import "DNKeychainHelper.h"
+#import "PushHelper.h"
+
 
 static NSString *const DNDeviceID = @"DeviceID"; 
 
@@ -25,7 +27,7 @@ static NSString *const DNDeviceID = @"DeviceID";
     NSLog(@"DNKeychainHelper returned deviceId: %@", deviceId);
     
     if(deviceId == nil){
-        deviceId = [self generateGUID];
+        deviceId = [PushHelper generateGUID];
         NSLog(@"Created a new GUID for the deviceId : %@", deviceId);
         [DNKeychainHelper saveObjectToKeychain:deviceId withKey:DNDeviceID];
     }  
@@ -39,13 +41,23 @@ static NSString *const DNDeviceID = @"DeviceID";
     [self.commandDelegate sendPluginResult:result callbackId:command.callbackId];
 }
 
-- (NSString *)generateGUID {
+- (void)registerForPush:(CDVInvokedUrlCommand*)command
+{    
+    NSLog(@"registerForPush");
+    
+    if ([PushHelper systemVersionAtLeast:8.0]) {
+        NSMutableSet *buttonSets = [PushHelper buttonsAsSets: nil];
+        [PushHelper addCategoriesToRemoteNotifications:buttonSets];
+    }
+    else {
+        [[UIApplication sharedApplication] registerForRemoteNotificationTypes:UIRemoteNotificationTypeSound | UIRemoteNotificationTypeAlert | UIRemoteNotificationTypeBadge];
+    }
+    
 
-    CFUUIDRef uuidRef = CFUUIDCreate(NULL);
-    NSString *guid = (NSString *)CFBridgingRelease(CFUUIDCreateString(NULL, uuidRef));
-    CFRelease(uuidRef);
+    CDVPluginResult* result = [CDVPluginResult
+                               resultWithStatus:CDVCommandStatus_OK ];
 
-    return guid;
+    [self.commandDelegate sendPluginResult:result callbackId:command.callbackId];
 }
 
 @end

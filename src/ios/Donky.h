@@ -4,6 +4,7 @@
 
 - (void) greet:(CDVInvokedUrlCommand*)command;
 - (void) deviceId:(CDVInvokedUrlCommand*)command;
+- (void) registerForPush:(CDVInvokedUrlCommand*)command;
 
 
 @end

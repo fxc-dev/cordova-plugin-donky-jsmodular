@@ -44,6 +44,12 @@ xmlns="http://apache.org/cordova/ns/plugins/1.0"
 
     <header-file src="src/ios/DNKeychainItemWrapper.h" target-dir="DonkyPlugin"/>
     <source-file src="src/ios/DNKeychainItemWrapper.m" target-dir="DonkyPlugin"/>
+    
+    <header-file src="src/ios/AppDelegate+notification.h" target-dir="DonkyPlugin"/>
+    <source-file src="src/ios/AppDelegate+notification.m" target-dir="DonkyPlugin"/>
+
+    <header-file src="src/ios/PushHelper.h" target-dir="DonkyPlugin"/>
+    <source-file src="src/ios/PushHelper.m" target-dir="DonkyPlugin"/>
 
   </platform>
 
