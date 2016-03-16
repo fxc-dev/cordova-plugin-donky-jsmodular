@@ -45,17 +45,58 @@ static NSString *const DNDeviceID = @"DeviceID";
 {    
     NSLog(@"registerForPush");
     
+    BOOL error = FALSE;
+    NSString *errorMessage = nil;
+    
+    
     if ([PushHelper systemVersionAtLeast:8.0]) {
-        NSMutableSet *buttonSets = [PushHelper buttonsAsSets: nil];
-        [PushHelper addCategoriesToRemoteNotifications:buttonSets];
+        
+        NSLog(@"systemVersion >= 8.0");
+        
+        int count = [[command arguments] count];
+        
+        if(count == 1){
+            NSLog(@"Arg count == 1");
+            
+            NSString* buttonSetsJson = [[command arguments] objectAtIndex:0];
+            
+            NSData *jsonData = [buttonSetsJson dataUsingEncoding:NSUTF8StringEncoding];
+            
+            NSError *jsonError;
+            
+            id jsonObject = [NSJSONSerialization JSONObjectWithData:jsonData options: NSJSONReadingMutableContainers error:&jsonError];
+            
+            if (!jsonError) {
+                if ([jsonObject isKindOfClass:[NSArray class]]) {
+                    NSArray *shizz = (NSArray *)jsonObject;
+                    //NSLog(@"You got your shit here: %@", shizz);
+                    NSMutableSet *buttonSets = [PushHelper buttonsAsSets: shizz];
+                    [PushHelper addCategoriesToRemoteNotifications:buttonSets];
+                    
+                }else{
+                    error = TRUE;
+                    errorMessage = @"jsonData not an array";
+                }
+            }else{
+                error = TRUE;
+                errorMessage = [NSString stringWithFormat:@"jsonError: %@", jsonError];
+            }
+            
+        }else{
+            error = TRUE;
+            NSLog(@"Arg count != 1 : #FAIL");
+            errorMessage = @"No button sets specified ;-(";
+        }
+        
     }
     else {
+        NSLog(@"systemVersion < 8.0");
         [[UIApplication sharedApplication] registerForRemoteNotificationTypes:UIRemoteNotificationTypeSound | UIRemoteNotificationTypeAlert | UIRemoteNotificationTypeBadge];
     }
     
-
-    CDVPluginResult* result = [CDVPluginResult
-                               resultWithStatus:CDVCommandStatus_OK ];
+    NSLog(@"error = %d", error);
+    
+    CDVPluginResult* result = [CDVPluginResult resultWithStatus: !error ? CDVCommandStatus_OK : CDVCommandStatus_ERROR messageAsString:errorMessage];
 
     [self.commandDelegate sendPluginResult:result callbackId:command.callbackId];
 }

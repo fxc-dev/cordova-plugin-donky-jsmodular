@@ -7,8 +7,8 @@ module.exports = {
     deviceId: function (successCallback, errorCallback) {
         cordova.exec(successCallback, errorCallback, "donky", "deviceId",[]);
     },
-    registerForPush: function (successCallback, errorCallback) {
-        cordova.exec(successCallback, errorCallback, "donky", "registerForPush",[]);
+    registerForPush: function (successCallback, errorCallback, buttonSets) {
+        cordova.exec(successCallback, errorCallback, "donky", "registerForPush",[JSON.stringify(buttonSets)]);
     },
     
 };
