@@ -116,7 +116,10 @@ static UIWebView* webView;
 {
     
     if(webView){
-        NSString* jsString = [NSString stringWithFormat:@"document.%@(%@)", event, data];
+        NSString* jsString = [NSString stringWithFormat:@"window.donky.callback(\'%@\',\'%@\');", event, data];
+        
+        NSLog(@"%@", jsString);
+        
         
         if ([webView respondsToSelector:@selector(stringByEvaluatingJavaScriptFromString:)]) {
             // Cordova-iOS pre-4

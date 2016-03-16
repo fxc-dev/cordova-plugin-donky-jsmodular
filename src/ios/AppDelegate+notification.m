@@ -1,29 +1,41 @@
 
 #import "AppDelegate+notification.h"
 #import <objc/runtime.h>
+#import "Donky.h"
 
 
 @implementation AppDelegate (notification)
 
 
 - (void)application:(UIApplication *)application didRegisterForRemoteNotificationsWithDeviceToken:(NSData *)deviceToken {
-    NSLog([NSString stringWithFormat:@"Device Token=%@",deviceToken]);
+    NSString *message = [NSString stringWithFormat:@"Device Token=%@",deviceToken];
+    NSLog(@"%@",message);
+    [Donky notify: @"donkyevent" withData: message];
+
 }
 
 - (void)application:(UIApplication *)application didFailToRegisterForRemoteNotificationsWithError:(NSError *)error {
     NSString *str = [NSString stringWithFormat: @"Error: %@", error];
-    NSLog(@"didFailToRegisterForRemoteNotificationsWithError - %@",str);
+    NSString *message = [NSString stringWithFormat:@"didFailToRegisterForRemoteNotificationsWithError - %@",str];
+    NSLog(@"%@",message);
+    [Donky notify: @"donkyevent" withData: message];
+
 }
 
 - (void)application:(UIApplication *)application didReceiveRemoteNotification:(NSDictionary *)userInfo fetchCompletionHandler:(void (^)(UIBackgroundFetchResult result))completionHandler {
-    NSLog(@"didReceiveRemoteNotification with userInfo: %@", userInfo);
+    NSString *message = [NSString stringWithFormat:@"didReceiveRemoteNotification with userInfo: %@", userInfo];
+    NSLog(@"%@",message);
+    [Donky notify: @"donkyevent" withData: message];
+
 }
 
 
 //For interactive notification only
 - (void)application:(UIApplication *)application handleActionWithIdentifier:(NSString *)identifier forRemoteNotification:(NSDictionary *)userInfo completionHandler:(void(^)())completionHandler
 {
-    NSLog(@"handleActionWithIdentifier with userInfo: %@", userInfo);
+    NSString *message = [NSString stringWithFormat:@"handleActionWithIdentifier with userInfo: %@", userInfo];
+    NSLog(@"%@",message);
+    [Donky notify: @"donkyevent" withData: message];
 }
 
 @end
