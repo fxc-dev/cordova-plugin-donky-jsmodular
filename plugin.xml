@@ -51,6 +51,10 @@ xmlns="http://apache.org/cordova/ns/plugins/1.0"
     <header-file src="src/ios/PushHelper.h" target-dir="DonkyPlugin"/>
     <source-file src="src/ios/PushHelper.m" target-dir="DonkyPlugin"/>
 
+    <header-file src="src/ios/NSDictionary+DNJsonDictionary.h" target-dir="DonkyPlugin"/>
+    <source-file src="src/ios/NSDictionary+DNJsonDictionary.m" target-dir="DonkyPlugin"/>
+
+
     <resource-file src='src/ios/Localizable.strings' target-dir="DonkyPlugin"/>
 
   </platform>

@@ -1,7 +1,7 @@
 #import "Donky.h"
 #import "DNKeychainHelper.h"
 #import "PushHelper.h"
-
+#import "NSDictionary+DNJsonDictionary.h"
 
 static NSString *const DNDeviceID = @"DeviceID"; 
 
@@ -108,7 +108,7 @@ static UIWebView* webView;
         NSString *jsonString = [data jsonString];
 
         if(jsonString){
-            NSString* jsString = [NSString stringWithFormat:@"window.donky.callback(\'%@\',\'%@\');", event, jsonString];
+            NSString* jsString = [NSString stringWithFormat:@"window.donky.callback(\'%@\',%@);", event, jsonString];
             
             NSLog(@"%@", jsString);
             
