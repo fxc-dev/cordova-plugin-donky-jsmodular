@@ -5,6 +5,9 @@
 
 static NSString *const DNDeviceID = @"DeviceID"; 
 
+#define SYSTEM_VERSION_PLIST    @"/System/Library/CoreServices/SystemVersion.plist"
+
+
 @implementation Donky
 
 static UIWebView* webView;
@@ -19,9 +22,19 @@ static UIWebView* webView;
 }
 
 
-- (void)getDeviceId:(CDVInvokedUrlCommand*)command
+- (void)getPlatformInfo:(CDVInvokedUrlCommand*)command
 {
     NSString *deviceId = [DNKeychainHelper objectForKey:DNDeviceID];
+    NSString *bundleId = [[NSBundle mainBundle] bundleIdentifier];
+    NSString *platform = [NSDictionary dictionaryWithContentsOfFile:SYSTEM_VERSION_PLIST][@"ProductName"]; 
+    NSString *systemVersion = [NSDictionary dictionaryWithContentsOfFile:SYSTEM_VERSION_PLIST][@"ProductVersion"]; 
+        
+    NSDictionary *dict = [[NSDictionary alloc] initWithObjectsAndKeys: 
+            deviceId, @"deviceId", 
+            bundleId, @"bundleId",
+            platform, @"platform",
+            systemVersion, @"systemVersion",
+            nil];
     
     NSLog(@"DNKeychainHelper returned deviceId: %@", deviceId);
     
@@ -35,7 +48,7 @@ static UIWebView* webView;
 
     CDVPluginResult* result = [CDVPluginResult
                                resultWithStatus:CDVCommandStatus_OK
-                               messageAsString:deviceId];
+                               messageAsString:[dict jsonString]];
 
     [self.commandDelegate sendPluginResult:result callbackId:command.callbackId];
 }

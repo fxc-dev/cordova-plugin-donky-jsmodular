@@ -9,6 +9,13 @@ module.exports = {
      *      console.log("donkyevent: " + JSON.stringify(e.detail));
      *  }, false);      
      * 
+     * current events:
+     * 
+     * 1) pushRegistrationSucceeded
+     * 2) pushRegistrationFailed
+     * 3) pushNotification
+     * 4) handleButtonAction
+     * 
      * @param  {String} eventName - the name of the event
      * @param  {Object} eventData - the object data associated with the event
      */
@@ -23,12 +30,12 @@ module.exports = {
         document.dispatchEvent(event);                
     },
     /**
-     * Method to query the deviceId
+     * Method to query platform related info
      * @param {Callback} successCallback - callback to call if method was succsful with the deviceId
      * @param {Callback} errorCallback - callback to call if method failed with the error messag
      */
-    getDeviceId: function (successCallback, errorCallback) {
-        cordova.exec(successCallback, errorCallback, "donky", "getDeviceId",[]);
+    getPlatformInfo: function (successCallback, errorCallback) {
+        cordova.exec(successCallback, errorCallback, "donky", "getPlatformInfo",[]);
     },
     /**
      * Method to register for push notifications

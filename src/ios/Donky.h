@@ -2,7 +2,7 @@
 
 @interface Donky : CDVPlugin
 
-- (void) getDeviceId:(CDVInvokedUrlCommand*)command;
+- (void) getPlatformInfo:(CDVInvokedUrlCommand*)command;
 - (void) registerForPush:(CDVInvokedUrlCommand*)command;
 
 + (void) notify:(NSString *)event withData:(NSDictionary *)data;
