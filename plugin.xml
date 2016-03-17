@@ -11,7 +11,7 @@ xmlns="http://apache.org/cordova/ns/plugins/1.0"
     <keywords>cordova,donky</keywords>
 
   <js-module src="www/donky.js" name="donky">
-    <clobbers target="donky" />
+    <clobbers target="cordova.plugins.donky" />
   </js-module>
 
 

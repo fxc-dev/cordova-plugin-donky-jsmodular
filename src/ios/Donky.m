@@ -121,7 +121,7 @@ static UIWebView* webView;
         NSString *jsonString = [data jsonString];
 
         if(jsonString){
-            NSString* jsString = [NSString stringWithFormat:@"window.donky.callback(\'%@\',%@);", event, jsonString];
+            NSString* jsString = [NSString stringWithFormat:@"window.cordova.plugins.donky.callback(\'%@\',%@);", event, jsonString];
             
             NSLog(@"%@", jsString);
             
