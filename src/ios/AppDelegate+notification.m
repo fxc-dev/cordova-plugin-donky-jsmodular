@@ -10,7 +10,10 @@
 - (void)application:(UIApplication *)application didRegisterForRemoteNotificationsWithDeviceToken:(NSData *)deviceToken {
     NSString *message = [NSString stringWithFormat:@"Device Token=%@",deviceToken];
     NSLog(@"%@",message);
-    [Donky notify: @"donkyevent" withData: message];
+    
+    NSDictionary *dict = [[NSDictionary alloc] initWithObjectsAndKeys: message, @"message", nil];
+    
+    [Donky notify: @"donkyevent" withData: dict];
 
 }
 
@@ -18,14 +21,17 @@
     NSString *str = [NSString stringWithFormat: @"Error: %@", error];
     NSString *message = [NSString stringWithFormat:@"didFailToRegisterForRemoteNotificationsWithError - %@",str];
     NSLog(@"%@",message);
-    [Donky notify: @"donkyevent" withData: message];
+    NSDictionary *dict = [[NSDictionary alloc] initWithObjectsAndKeys: message, @"message", nil];
+
+    [Donky notify: @"donkyevent" withData: dict];
 
 }
 
 - (void)application:(UIApplication *)application didReceiveRemoteNotification:(NSDictionary *)userInfo fetchCompletionHandler:(void (^)(UIBackgroundFetchResult result))completionHandler {
     NSString *message = [NSString stringWithFormat:@"didReceiveRemoteNotification with userInfo: %@", userInfo];
     NSLog(@"%@",message);
-    [Donky notify: @"donkyevent" withData: message];
+    NSDictionary *dict = [[NSDictionary alloc] initWithObjectsAndKeys: message, @"message", nil];
+    [Donky notify: @"donkyevent" withData: dict];
 
 }
 
@@ -35,7 +41,8 @@
 {
     NSString *message = [NSString stringWithFormat:@"handleActionWithIdentifier with userInfo: %@", userInfo];
     NSLog(@"%@",message);
-    [Donky notify: @"donkyevent" withData: message];
+    NSDictionary *dict = [[NSDictionary alloc] initWithObjectsAndKeys: message, @"message", nil];
+    [Donky notify: @"donkyevent" withData: dict];
 }
 
 @end

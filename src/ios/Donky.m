@@ -18,20 +18,8 @@ static UIWebView* webView;
     }
 }
 
-- (void)greet:(CDVInvokedUrlCommand*)command
-{
 
-    NSString* name = [[command arguments] objectAtIndex:0];
-    NSString* msg = [NSString stringWithFormat: @"Hello, %@", name];
-
-    CDVPluginResult* result = [CDVPluginResult
-                               resultWithStatus:CDVCommandStatus_OK
-                               messageAsString:msg];
-
-    [self.commandDelegate sendPluginResult:result callbackId:command.callbackId];
-}
-
-- (void)deviceId:(CDVInvokedUrlCommand*)command
+- (void)getDeviceId:(CDVInvokedUrlCommand*)command
 {
     NSString *deviceId = [DNKeychainHelper objectForKey:DNDeviceID];
     
@@ -64,7 +52,7 @@ static UIWebView* webView;
         
         NSLog(@"systemVersion >= 8.0");
         
-        int count = [[command arguments] count];
+        NSUInteger count = [[command arguments] count];
         
         if(count == 1){
             NSLog(@"Arg count == 1");
@@ -112,21 +100,26 @@ static UIWebView* webView;
     [self.commandDelegate sendPluginResult:result callbackId:command.callbackId];
 }
 
-+ (void) notify:(NSString *)event withData:(NSString *)data
++ (void) notify:(NSString *)event withData:(NSDictionary *)data
 {
     
     if(webView){
-        NSString* jsString = [NSString stringWithFormat:@"window.donky.callback(\'%@\',\'%@\');", event, data];
         
-        NSLog(@"%@", jsString);
-        
-        
-        if ([webView respondsToSelector:@selector(stringByEvaluatingJavaScriptFromString:)]) {
-            // Cordova-iOS pre-4
-            [webView performSelectorOnMainThread:@selector(stringByEvaluatingJavaScriptFromString:) withObject:jsString waitUntilDone:NO];
-        } else {
-            // Cordova-iOS 4+
-            [webView performSelectorOnMainThread:@selector(evaluateJavaScript:completionHandler:) withObject:jsString waitUntilDone:NO];
+        NSString *jsonString = [data jsonString];
+
+        if(jsonString){
+            NSString* jsString = [NSString stringWithFormat:@"window.donky.callback(\'%@\',\'%@\');", event, jsonString];
+            
+            NSLog(@"%@", jsString);
+            
+            
+            if ([webView respondsToSelector:@selector(stringByEvaluatingJavaScriptFromString:)]) {
+                // Cordova-iOS pre-4
+                [webView performSelectorOnMainThread:@selector(stringByEvaluatingJavaScriptFromString:) withObject:jsString waitUntilDone:NO];
+            } else {
+                // Cordova-iOS 4+
+                [webView performSelectorOnMainThread:@selector(evaluateJavaScript:completionHandler:) withObject:jsString waitUntilDone:NO];
+            }
         }
     }
     

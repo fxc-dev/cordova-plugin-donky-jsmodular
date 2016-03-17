@@ -37,15 +37,7 @@ public class Donky extends CordovaPlugin {
      */    
     public boolean execute(String action, JSONArray data, CallbackContext callbackContext) throws JSONException {
 
-        if (action.equals("greet")) {
-
-            String name = data.getString(0);
-            String message = "Hello, " + name;
-            callbackContext.success(message);
-
-            return true;
-        }
-        else if (action.equals("deviceId")) {
+        if (action.equals("getDeviceId")) {
             
             String deviceId = getUuid();
             callbackContext.success(deviceId);
