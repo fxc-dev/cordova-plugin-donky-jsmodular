@@ -54,23 +54,29 @@ function DonkyPlugin(){
 
                 /**
                  * A button has been clicked (iOS)
-                 * 
-                 *   $scope.handleClick = function(button){            
-                 *      donkyPushLogic.setSimplePushResult($scope.pushMessage.id, button.buttonText);
-                 *       
-                 *       if (button.actionType === "Link" && button.linkURL !== "") {
-                 *           $window.open(button.linkURL);
-                 *       }
-                 *  
-                 *       $scope.modal.hide().then(function(){
-                 *           $scope.modalActive = false;   
-                 *           $scope.displayNextPushMessage();                                              
-                 *       });
-                 *   }          
-                 * 
+                 * TODO: User is done with this msg so make sure it doesn't get displayed a second time ...
+                 * !!! POTENTIAL RACE CONDITION CENTRAL HERE !!!  
                  */
                 document.addEventListener("handleButtonAction", function (e) {
                     console.log("handleButtonAction", JSON.stringify(e.detail, null, 4));
+                    
+                    // If SDK not initialised, we can't make rest calls (even if we have a token)  should I change this ?
+                    
+                    var buttonText = e.detail.data.identifier;
+                    var notificationId = e.detail.data.userInfo.notificationId;
+                    
+                    donkyCore.donkyNetwork.getServerNotification(notificationId, function(notification){
+                        if(notification){
+                            
+                            // this will mark as received and fire a local event so not sure I want to add in like this ...
+                            // flag to not publish a local event !!!                            
+                            donkyPushLogic.processPushMessage(notification, false);
+
+                            // this will delete the message                            
+                            donkyPushLogic.setSimplePushResult(notificationId, buttonText);                                                        
+                        }
+                    });
+                    
                 });                            
                 
                 /**
@@ -153,9 +159,10 @@ DonkyPlugin.prototype.callback = function(eventName, eventData){
     document.dispatchEvent(event);    
     
     // TODO: Should I just use this ?
+    /*
     if(window.donkyCore){
         donkyCore.publishLocalEvent({ type: eventName, data: eventData });
-    }    
+    }*/   
                 
 }
 
