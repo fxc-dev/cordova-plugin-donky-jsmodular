@@ -18,10 +18,13 @@ function DonkyPlugin(){
         self.getPlatformInfo(function(info){
             self.available = true;
 
-            self.deviceId = info.deviceId; 
-            self.bundleId = info.bundleId; 
-            self.platform = info.platform; 
-            self.systemVersion = info.systemVersion; 
+            self.manufacturer = info.manufacturer;
+            self.model = info.model;
+            self.platform = info.platform;
+            self.version = info.version;
+            self.cordova = info.cordova;
+            self.bundleId = info.bundleId;
+            self.deviceId = info.deviceId;
             
             channel.onCordovaInfoReady.fire();                        
         },function(e){

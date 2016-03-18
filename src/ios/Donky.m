@@ -1,11 +1,21 @@
+#include <sys/types.h>
+#include <sys/sysctl.h>
+
 #import "Donky.h"
 #import "DNKeychainHelper.h"
 #import "PushHelper.h"
 #import "NSDictionary+DNJsonDictionary.h"
 
+
 static NSString *const DNDeviceID = @"DeviceID"; 
 
 #define SYSTEM_VERSION_PLIST    @"/System/Library/CoreServices/SystemVersion.plist"
+
+/* Return the string version of the decimal version */
+#define CDV_VERSION [NSString stringWithFormat:@"%d.%d.%d", \
+(CORDOVA_VERSION_MIN_REQUIRED / 10000),                 \
+(CORDOVA_VERSION_MIN_REQUIRED % 10000) / 100,           \
+(CORDOVA_VERSION_MIN_REQUIRED % 10000) % 100]
 
 
 @implementation Donky
@@ -22,31 +32,43 @@ static UIWebView* webView;
 }
 
 
+- (NSString*)modelVersion
+{
+    size_t size;
+    
+    sysctlbyname("hw.machine", NULL, &size, NULL, 0);
+    char* machine = malloc(size);
+    sysctlbyname("hw.machine", machine, &size, NULL, 0);
+    NSString* platform = [NSString stringWithUTF8String:machine];
+    free(machine);
+    
+    return platform;
+}
+
+
 - (void)getPlatformInfo:(CDVInvokedUrlCommand*)command
 {
     NSString *deviceId = [DNKeychainHelper objectForKey:DNDeviceID];
-    NSString *bundleId = [[NSBundle mainBundle] bundleIdentifier];
-    NSString *platform = [NSDictionary dictionaryWithContentsOfFile:SYSTEM_VERSION_PLIST][@"ProductName"]; 
-    NSString *systemVersion = [NSDictionary dictionaryWithContentsOfFile:SYSTEM_VERSION_PLIST][@"ProductVersion"]; 
-        
-    NSDictionary *dict = [[NSDictionary alloc] initWithObjectsAndKeys: 
-            deviceId, @"deviceId", 
-            bundleId, @"bundleId",
-            platform, @"platform",
-            systemVersion, @"systemVersion",
-            nil];
-    
     NSLog(@"DNKeychainHelper returned deviceId: %@", deviceId);
     
     if(deviceId == nil){
         deviceId = [PushHelper generateGUID];
         NSLog(@"Created a new GUID for the deviceId : %@", deviceId);
         [DNKeychainHelper saveObjectToKeychain:deviceId withKey:DNDeviceID];
-    }  
+    }
+    
+    UIDevice* device = [UIDevice currentDevice];
+    NSMutableDictionary* devProps = [[NSMutableDictionary alloc] init];
+    
+    [devProps setObject:@"Apple" forKey:@"manufacturer"];
+    [devProps setObject:[self modelVersion] forKey:@"model"];
+    [devProps setObject:@"iOS" forKey:@"platform"];
+    [devProps setObject:[device systemVersion] forKey:@"version"];
+    [devProps setObject:CDV_VERSION forKey:@"cordova"];
+    [devProps setObject:[[NSBundle mainBundle] bundleIdentifier] forKey:@"bundleId"];
+    [devProps setObject:deviceId forKey:@"deviceId"];
 
-    NSLog(@"returning deviceId: %@", deviceId);
-
-    CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:dict];
+    CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:devProps];
 
     [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
 }
