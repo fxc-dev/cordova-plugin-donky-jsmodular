@@ -1,24 +1,34 @@
-var channel = require('cordova/channel');
+var channel = require('cordova/channel'),
+    utils = require('cordova/utils');
 
 channel.createSticky('onCordovaInfoReady');
 // Tell cordova channel to wait on the CordovaInfoReady event
 channel.waitForInitialization('onCordovaInfoReady');
 
-
+/**
+ * DonkyPlugin constructor
+ */
 function DonkyPlugin(){
 
     var self = this;
 
-    channel.onCordovaReady.subscribe(
-        function() {
+    channel.onCordovaReady.subscribe(function() {
+        console.log("onCordovaReady ;-)");
+        
+        self.getPlatformInfo(function(info){
             self.available = true;
-            console.log("onCordovaReady ;-)");
-            channel.onCordovaInfoReady.fire();            
-        },
-        function(e) {
+
+            self.deviceId = info.deviceId; 
+            self.bundleId = info.bundleId; 
+            self.platform = info.platform; 
+            self.systemVersion = info.systemVersion; 
+            
+            channel.onCordovaInfoReady.fire();                        
+        },function(e){
             self.available = false;
-            console.log("[ERROR] Error initializing Cordova: " + e);
+            utils.alert("[ERROR] Error initializing Cordova: " + e);            
         });
+    });
 }
 
 

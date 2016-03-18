@@ -46,11 +46,9 @@ static UIWebView* webView;
 
     NSLog(@"returning deviceId: %@", deviceId);
 
-    CDVPluginResult* result = [CDVPluginResult
-                               resultWithStatus:CDVCommandStatus_OK
-                               messageAsString:[dict jsonString]];
+    CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:dict];
 
-    [self.commandDelegate sendPluginResult:result callbackId:command.callbackId];
+    [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
 }
 
 - (void)registerForPush:(CDVInvokedUrlCommand*)command
