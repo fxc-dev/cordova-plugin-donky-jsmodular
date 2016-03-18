@@ -1,3 +1,4 @@
+
 var channel = require('cordova/channel'),
     utils = require('cordova/utils');
 
@@ -25,6 +26,94 @@ function DonkyPlugin(){
             self.cordova = info.cordova;
             self.bundleId = info.bundleId;
             self.deviceId = info.deviceId;
+                
+            // These need to be available ... (integrators responsibility to load)        
+            if(window.donkyCore && window.donkyPushLogic){
+                
+                try{
+                    donkyCore.donkyAccount.setOperatingSystem(self.platform);
+                }catch(e){
+                    utils.alert("[ERROR] Error calling donkyCore.donkyAccount.setOperatingSystem(" + self.platform + ") : " + e);                    
+                }
+
+                /**
+                 * A new push notification has arrived
+                 *
+                 */
+                document.addEventListener("pushNotification", function (e) {
+                    console.log("pushNotification: " + JSON.stringify(e.detail, null, 4));
+                    var notificationId = e.detail.data.userInfo.notificationId;
+                    
+                    donkyCore.donkyNetwork.getServerNotification(notificationId, function(notification){
+                        if(notification){
+                            donkyPushLogic.processPushMessage(notification);                            
+                        }
+                    });
+                });                            
+
+
+                /**
+                 * A button has been clicked (iOS)
+                 * 
+                 *   $scope.handleClick = function(button){            
+                 *      donkyPushLogic.setSimplePushResult($scope.pushMessage.id, button.buttonText);
+                 *       
+                 *       if (button.actionType === "Link" && button.linkURL !== "") {
+                 *           $window.open(button.linkURL);
+                 *       }
+                 *  
+                 *       $scope.modal.hide().then(function(){
+                 *           $scope.modalActive = false;   
+                 *           $scope.displayNextPushMessage();                                              
+                 *       });
+                 *   }          
+                 * 
+                 */
+                document.addEventListener("handleButtonAction", function (e) {
+                    console.log("handleButtonAction", JSON.stringify(e.detail, null, 4));
+                });                            
+                
+                /**
+                 * We have a device token now which needs to be sent to donky
+                 */
+                document.addEventListener("pushRegistrationSucceeded", function (e) {
+                    console.log("pushRegistrationSucceeded", JSON.stringify(e.detail.deviceToken, null, 4));
+
+                    var pushConfigurationRequest = {
+                        registrationId: e.detail.data.deviceToken,
+                        bundleId: window.cordova.plugins.donky.bundleId
+                    };
+
+                    console.log("pushConfigurationRequest", JSON.stringify(pushConfigurationRequest, null, 4));
+
+                    donkyCore.sendPushConfiguration(pushConfigurationRequest, function(result){
+                        
+                        console.log("sendPushConfiguration result: ", JSON.stringify(result, null, 4));
+                    });
+                                                                                                                           
+                }, false);
+
+                document.addEventListener("pushRegistrationFailed", function (e) {
+                    console.error("pushRegistrationFailed", JSON.stringify(e.detail.data.error, null, 4));                        
+                }, false);
+                
+                
+                // This event is ALWAYS published on succesful initialisation - hook into it and run our analysis ...
+                donkyCore.subscribeToLocalEvent("DonkyInitialised", function(event) {
+
+                    console.log("DonkyInitialised event received in DonkyPlugin()");                    
+                    
+                    var buttonSets = donkyCore.getiOSButtonCategories();                                                            
+
+                    self.registerForPush(function(result){
+                        console.log("registerForPush succeeded");
+                    }, function(error){
+                        consloe.log("registerForPush failed");
+                    },
+                    buttonSets);
+                });
+                                
+            }
             
             channel.onCordovaInfoReady.fire();                        
         },function(e){
@@ -61,7 +150,13 @@ DonkyPlugin.prototype.callback = function(eventName, eventData){
         }
     });
 
-    document.dispatchEvent(event);                
+    document.dispatchEvent(event);    
+    
+    // TODO: Should I just use this ?
+    if(window.donkyCore){
+        donkyCore.publishLocalEvent({ type: eventName, data: eventData });
+    }    
+                
 }
 
 /**
@@ -84,4 +179,6 @@ DonkyPlugin.prototype.registerForPush = function(successCallback, errorCallback,
 }
 
 module.exports = new DonkyPlugin();
+
+
 
