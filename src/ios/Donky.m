@@ -81,7 +81,7 @@ static UIWebView* webView;
             if (!jsonError) {
                 if ([jsonObject isKindOfClass:[NSArray class]]) {
                     NSArray *shizz = (NSArray *)jsonObject;
-                    //NSLog(@"You got your shit here: %@", shizz);
+
                     NSMutableSet *buttonSets = [PushHelper buttonsAsSets: shizz];
                     [PushHelper addCategoriesToRemoteNotifications:buttonSets];
                     
@@ -114,8 +114,7 @@ static UIWebView* webView;
 }
 
 + (void) notify:(NSString *)event withData:(NSDictionary *)data
-{
-    
+{    
     if(webView){
         
         NSString *jsonString = [data jsonString];
@@ -124,7 +123,6 @@ static UIWebView* webView;
             NSString* jsString = [NSString stringWithFormat:@"window.cordova.plugins.donky.callback(\'%@\',%@);", event, jsonString];
             
             NSLog(@"%@", jsString);
-            
             
             if ([webView respondsToSelector:@selector(stringByEvaluatingJavaScriptFromString:)]) {
                 // Cordova-iOS pre-4
