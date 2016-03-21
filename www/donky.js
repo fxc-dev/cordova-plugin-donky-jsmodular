@@ -92,7 +92,7 @@ function DonkyPlugin(){
 
                     console.log("pushConfigurationRequest", JSON.stringify(pushConfigurationRequest, null, 4));
 
-                    donkyCore.sendPushConfiguration(pushConfigurationRequest, function(result){
+                    donkyCore.donkyAccount.sendPushConfiguration(pushConfigurationRequest, function(result){
                         
                         console.log("sendPushConfiguration result: ", JSON.stringify(result, null, 4));
                     });
@@ -184,6 +184,17 @@ DonkyPlugin.prototype.getPlatformInfo = function(successCallback, errorCallback)
 DonkyPlugin.prototype.registerForPush = function(successCallback, errorCallback, buttonSets){
     cordova.exec(successCallback, errorCallback, "donky", "registerForPush",[JSON.stringify(buttonSets)]);        
 }
+
+/**
+ * Method to set the badge count
+ * @param {Callback} successCallback - callback to call if method was succsful with the deviceId
+ * @param {Callback} errorCallback - callback to call if method failed with the error messag
+ * @param {Nimber} count - the count to set to
+ */
+DonkyPlugin.prototype.setBadgeCount = function(successCallback, errorCallback, count){
+    cordova.exec(successCallback, errorCallback, "donky", "setBadgeCount", [count]);        
+}
+
 
 module.exports = new DonkyPlugin();
 

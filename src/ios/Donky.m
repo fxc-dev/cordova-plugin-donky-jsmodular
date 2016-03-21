@@ -133,6 +133,18 @@ static UIWebView* webView;
     [self.commandDelegate sendPluginResult:result callbackId:command.callbackId];
 }
 
+- (void) setBadgeCount:(CDVInvokedUrlCommand*)command; 
+{
+    NSString* badgeCount = [[command arguments] objectAtIndex:0];
+    
+    [[UIApplication sharedApplication] setApplicationIconBadgeNumber:[badgeCount intValue]];
+    
+    CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK];
+    
+    [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+        
+}
+
 + (void) notify:(NSString *)event withData:(NSDictionary *)data
 {    
     if(webView){
