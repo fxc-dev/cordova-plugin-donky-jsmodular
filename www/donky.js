@@ -13,6 +13,27 @@ function DonkyPlugin(){
 
     var self = this;
 
+    function syncBadgeCount(){
+        // set badge count 
+        
+        var badgeCount = 0;
+
+        if(window.donkyPushLogic){
+            badgeCount += donkyPushLogic.getMessageCount();                                        
+        }                                
+        
+        if(window.donkyRichLogic){
+            badgeCount += donkyRichLogic.getMessageCount().unreadRichMessageCount;                                        
+        }                                
+                                
+        if(window.donkyMessagingCommon){
+            donkyMessagingCommon.setBadgeCount(badgeCount, true);                            
+        }
+        
+        self.setBadgeCount(function(){},function(){},badgeCount);
+        
+    }
+
     channel.onCordovaReady.subscribe(function() {
         console.log("onCordovaReady ;-)");
         
@@ -32,8 +53,9 @@ function DonkyPlugin(){
                 
                 try{
                     donkyCore.donkyAccount.setOperatingSystem(self.platform);
+                    donkyCore.donkyAccount._setDeviceId(self.deviceId);
                 }catch(e){
-                    utils.alert("[ERROR] Error calling donkyCore.donkyAccount.setOperatingSystem(" + self.platform + ") : " + e);                    
+                    utils.alert("[ERROR] Error initialising donky: " + e);                    
                 }
 
                 /**
@@ -61,8 +83,20 @@ function DonkyPlugin(){
                                 break;
                             }                           
                         }
+                        
+                        syncBadgeCount();
+                        
                     });
-                });                            
+                });        
+                
+                /**
+                 * 
+                 */
+                donkyCore.subscribeToLocalEvent("RichMessageRead", function (event) {
+                    syncBadgeCount();
+                });                
+                
+                                    
 
 
                 /**
