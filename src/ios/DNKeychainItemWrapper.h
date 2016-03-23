@@ -14,4 +14,6 @@
 
 + (id)objectForKey:(id)key;
 
++ (void)keyChainDeleteKey:(NSString *)key;
+
 @end
