@@ -29,7 +29,22 @@ static UIWebView* webView;
     if (self.webViewEngine != nil) {
         webView = (UIWebView *)self.webViewEngine.engineWebView;
     }
+    
+    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(onPause) name:UIApplicationDidEnterBackgroundNotification object:nil];
+    
+    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(onResume) name:UIApplicationWillEnterForegroundNotification object:nil];
 }
+
+- (void) onPause {
+    NSLog(@"UIApplicationDidEnterBackgroundNotification");
+    [Donky notify: @"AppBackgrounded" withData: nil];
+}
+
+- (void) onResume {
+    NSLog(@"UIApplicationDidBecomeActiveNotification");
+    [Donky notify: @"AppForegrounded" withData: nil];
+}
+
 
 
 - (NSString*)modelVersion
@@ -145,6 +160,19 @@ static UIWebView* webView;
         
 }
 
++ (void) executeJavascript:(NSString *)jsString{
+
+    if ([webView respondsToSelector:@selector(stringByEvaluatingJavaScriptFromString:)]) {
+        // Cordova-iOS pre-4
+        [webView performSelectorOnMainThread:@selector(stringByEvaluatingJavaScriptFromString:) withObject:jsString waitUntilDone:NO];
+    } else {
+        // Cordova-iOS 4+
+        [webView performSelectorOnMainThread:@selector(evaluateJavaScript:completionHandler:) withObject:jsString waitUntilDone:NO];
+    }
+    
+}
+
+
 + (void) notify:(NSString *)event withData:(NSDictionary *)data
 {    
     if(webView){
@@ -156,17 +184,20 @@ static UIWebView* webView;
             
             NSLog(@"%@", jsString);
             
-            if ([webView respondsToSelector:@selector(stringByEvaluatingJavaScriptFromString:)]) {
-                // Cordova-iOS pre-4
-                [webView performSelectorOnMainThread:@selector(stringByEvaluatingJavaScriptFromString:) withObject:jsString waitUntilDone:NO];
-            } else {
-                // Cordova-iOS 4+
-                [webView performSelectorOnMainThread:@selector(evaluateJavaScript:completionHandler:) withObject:jsString waitUntilDone:NO];
-            }
+            [Donky executeJavascript: jsString];
+            
+        }else{
+            NSString* jsString = [NSString stringWithFormat:@"window.cordova.plugins.donky.callback(\'%@\');", event];
+            
+            NSLog(@"%@", jsString);
+            
+            [Donky executeJavascript: jsString];
+
         }
     }
     
 }
+
 
 
 @end
