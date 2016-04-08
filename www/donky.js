@@ -95,9 +95,6 @@ function DonkyPlugin(){
                 donkyCore.subscribeToLocalEvent("RichMessageRead", function (event) {
                     syncBadgeCount();
                 });                
-                
-                                    
-
 
                 /**
                  * A button has been clicked (iOS)
@@ -154,6 +151,39 @@ function DonkyPlugin(){
                 donkyCore.subscribeToLocalEvent("pushRegistrationFailed", function (event) {
                     console.error("pushRegistrationFailed", JSON.stringify(event.data.error, null, 4));                        
                 }, false);
+                          
+                var launchTimeUtc = new Date();
+
+                /**
+                 * 
+                 */
+                function queueAppSession(){
+
+                    var sessionClientNotification = {
+                        Type: "AppSession",
+                        "startTimeUtc": _util.formatDate(lastSessionStartTime),
+                        "endTimeUtc": _util.formatDate(lastSessionEndTime),
+                        "operatingSystem": donkyCore.donkyAccount.getOperatingSystem(),
+                        "sessionTrigger": "None"
+                    };
+                    
+                    donkyCore.queueClientNotifications(launchClientNotification);                    
+                }
+                          
+                /**
+                 * 
+                 */
+                function queueAppLaunch(){
+                    var launchClientNotification = {
+                        Type: "AppLaunch",
+                        "launchTimeUtc": _util.formatDate(new Date().valueOf()),
+                        "operatingSystem": donkyCore.donkyAccount.getOperatingSystem(),
+                        "sessionTrigger" : "None"
+                    };
+
+                    donkyCore.queueClientNotifications(launchClientNotification);                    
+                }          
+                          
                                 
                 // This event is ALWAYS published on succesful initialisation - hook into it and run our analysis ...
                 donkyCore.subscribeToLocalEvent("DonkyInitialised", function(event) {
@@ -169,6 +199,21 @@ function DonkyPlugin(){
                     },
                     buttonSets);
                 });
+                
+                /**
+                *
+                */            
+                donkyCore.subscribeToLocalEvent("AppBackgrounded", function(event) {
+                    // queue an AppSession 
+                });        
+                
+                /**
+                *
+                */            
+                donkyCore.subscribeToLocalEvent("AppForegrounded", function(event) {
+                    // retart AppSession.launchTimeUtc
+                });        
+                
                                 
             }
             

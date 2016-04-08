@@ -1,10 +1,10 @@
 
-#import "AppDelegate+notification.h"
+#import "AppDelegate+donky.h"
 #import <objc/runtime.h>
 #import "Donky.h"
 
 
-@implementation AppDelegate (notification)
+@implementation AppDelegate (donky)
 
 
 - (void)application:(UIApplication *)application didRegisterForRemoteNotificationsWithDeviceToken:(NSData *)deviceToken {    
@@ -30,16 +30,37 @@
     [Donky notify: @"pushRegistrationFailed" withData: dict];
 }
 
+/**
+ * This one is called if the notification is tapped (and app is backgrounded)
+ * If app is not running and this fires, it all happens before cordova and donky are ready to process it
+ */
 - (void)application:(UIApplication *)application didReceiveRemoteNotification:(NSDictionary *)userInfo fetchCompletionHandler:(void (^)(UIBackgroundFetchResult result))completionHandler {
-    NSDictionary *dict = [[NSDictionary alloc] initWithObjectsAndKeys: userInfo, @"userInfo", nil];
+    
+    UIApplicationState state =[[UIApplication sharedApplication] applicationState];
+    
+    NSDictionary *dict = [[NSDictionary alloc] initWithObjectsAndKeys: userInfo, @"userInfo", @(state), @"applicationState", nil];
+    
+    if([[UIApplication sharedApplication] applicationState] == UIApplicationStateInactive){
+        
+    }
+    
     [Donky notify: @"pushNotification" withData: dict];
     completionHandler(UIBackgroundFetchResultNewData);
 }
 
-//For interactive notification only
+/**
+ * This one is called if interactive button is tapped (and app is backgrounded)
+ */
 - (void)application:(UIApplication *)application handleActionWithIdentifier:(NSString *)identifier forRemoteNotification:(NSDictionary *)userInfo completionHandler:(void(^)())completionHandler
 {
-    NSDictionary *dict = [[NSDictionary alloc] initWithObjectsAndKeys: identifier, @"identifier", userInfo, @"userInfo", nil];
+    UIApplicationState state =[[UIApplication sharedApplication] applicationState];
+    
+    NSDictionary *dict = [[NSDictionary alloc] initWithObjectsAndKeys: identifier, @"identifier", userInfo, @"userInfo", @(state), @"applicationState", nil];
+
+    if([[UIApplication sharedApplication] applicationState] == UIApplicationStateInactive){
+        
+    }
+    
     [Donky notify: @"handleButtonAction" withData: dict];
     completionHandler(UIBackgroundFetchResultNewData);
 }

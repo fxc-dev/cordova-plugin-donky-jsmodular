@@ -2,7 +2,7 @@
 
 #import "AppDelegate.h"
 
-@interface AppDelegate (notification)
+@interface AppDelegate (donky)
 
 - (void)application:(UIApplication *)application didRegisterForRemoteNotificationsWithDeviceToken:(NSData *)deviceToken;
 - (void)application:(UIApplication *)application didFailToRegisterForRemoteNotificationsWithError:(NSError *)error;
