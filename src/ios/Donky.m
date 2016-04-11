@@ -33,6 +33,13 @@ static UIWebView* webView;
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(onPause) name:UIApplicationDidEnterBackgroundNotification object:nil];
     
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(onResume) name:UIApplicationWillEnterForegroundNotification object:nil];
+    
+    /**
+     * TODO: is there a stored push notification that needs to be either
+     *  [Donky notify: @"pushNotification" withData: dict];
+     * or
+     *  [Donky notify: @"handleButtonAction" withData: dict]; 
+     */
 }
 
 - (void) onPause {
