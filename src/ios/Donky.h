@@ -9,4 +9,6 @@
 
 + (void) notify:(NSString *)event withData:(NSDictionary *)data;
 
+@property BOOL coldstart;
+
 @end

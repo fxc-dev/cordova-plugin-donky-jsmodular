@@ -22,9 +22,11 @@ static NSString *const DNDeviceID = @"DeviceID";
 
 static UIWebView* webView;
 
+@synthesize coldstart;
+
 - (void) pluginInitialize;
 {
-    NSLog(@"DonkyPlugin:pluginInitialize");
+    NSLog(@"Donky::pluginInitialize");
     
     if (self.webViewEngine != nil) {
         webView = (UIWebView *)self.webViewEngine.engineWebView;
@@ -70,6 +72,7 @@ static UIWebView* webView;
 
 - (void)getPlatformInfo:(CDVInvokedUrlCommand*)command
 {
+    NSLog(@"Donky::getPlatformInfo");
     NSString *deviceId = [DNKeychainHelper objectForKey:DNDeviceID];
     NSLog(@"DNKeychainHelper returned deviceId: %@", deviceId);
     
@@ -89,6 +92,7 @@ static UIWebView* webView;
     [devProps setObject:CDV_VERSION forKey:@"cordova"];
     [devProps setObject:[[NSBundle mainBundle] bundleIdentifier] forKey:@"bundleId"];
     [devProps setObject:deviceId forKey:@"deviceId"];
+    [devProps setObject:[NSNumber numberWithBool:[self coldstart]] forKey:@"coldstart"];
 
     CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:devProps];
 
@@ -97,12 +101,11 @@ static UIWebView* webView;
 
 - (void)registerForPush:(CDVInvokedUrlCommand*)command
 {    
-    NSLog(@"registerForPush");
+    NSLog(@"Donky::registerForPush");
     
     BOOL error = FALSE;
     NSString *errorMessage = nil;
-    
-    
+        
     if ([PushHelper systemVersionAtLeast:8.0]) {
         
         NSLog(@"systemVersion >= 8.0");
@@ -157,6 +160,7 @@ static UIWebView* webView;
 
 - (void) setBadgeCount:(CDVInvokedUrlCommand*)command; 
 {
+    NSLog(@"Donky::setBadgeCount");
     NSString* badgeCount = [[command arguments] objectAtIndex:0];
     
     [[UIApplication sharedApplication] setApplicationIconBadgeNumber:[badgeCount intValue]];
@@ -181,7 +185,9 @@ static UIWebView* webView;
 
 
 + (void) notify:(NSString *)event withData:(NSDictionary *)data
-{    
+{
+    NSLog(@"Donky::notify");
+    
     if(webView){
         
         NSString *jsonString = [data jsonString];

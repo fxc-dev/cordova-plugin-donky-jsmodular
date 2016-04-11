@@ -50,6 +50,8 @@ static char coldstartKey;
 
 - (AppDelegate *)pushPluginSwizzledInit
 {
+    NSLog(@"AppDelegate(donky)::pushPluginSwizzledInit");
+    
     [[NSNotificationCenter defaultCenter] addObserver:self
                                              selector:@selector(createNotificationChecker:)
                                                  name:UIApplicationDidFinishLaunchingNotification
@@ -69,7 +71,7 @@ static char coldstartKey;
 // to process notifications in cold-start situations
 - (void)createNotificationChecker:(NSNotification *)notification
 {
-    NSLog(@"createNotificationChecker");
+    NSLog(@"AppDelegate(donky)::createNotificationChecker");
     if (notification)
     {
         NSDictionary *launchOptions = [notification userInfo];
@@ -86,19 +88,21 @@ static char coldstartKey;
 
 - (void)pushPluginOnApplicationDidBecomeActive:(NSNotification *)notification {
     
-    NSLog(@"active");
+    NSLog(@"AppDelegate(donky)::pushPluginOnApplicationDidBecomeActive");
     
     UIApplication *application = notification.object;
     
-    [self getCommandInstance:@"PushNotification"];
+    Donky *donky = [self getCommandInstance:@"donky"];
     
     
     if (self.launchNotification) {
-
+        donky.coldstart = [self.coldstart boolValue];
     }
 }
 
 - (void)application:(UIApplication *)application didRegisterForRemoteNotificationsWithDeviceToken:(NSData *)deviceToken {    
+
+    NSLog(@"AppDelegate(donky)::didRegisterForRemoteNotificationsWithDeviceToken");
 
     NSMutableString *hexString = nil;
     if (deviceToken) {
@@ -127,6 +131,8 @@ static char coldstartKey;
  */
 - (void)application:(UIApplication *)application didReceiveRemoteNotification:(NSDictionary *)userInfo fetchCompletionHandler:(void (^)(UIBackgroundFetchResult result))completionHandler {
     
+    NSLog(@"AppDelegate(donky)::didReceiveRemoteNotification");
+    
     UIApplicationState state =[[UIApplication sharedApplication] applicationState];
     
     NSDictionary *dict = [[NSDictionary alloc] initWithObjectsAndKeys: userInfo, @"userInfo", @(state), @"applicationState", nil];
@@ -144,6 +150,8 @@ static char coldstartKey;
  */
 - (void)application:(UIApplication *)application handleActionWithIdentifier:(NSString *)identifier forRemoteNotification:(NSDictionary *)userInfo completionHandler:(void(^)())completionHandler
 {
+    NSLog(@"AppDelegate(donky)::handleActionWithIdentifier");
+    
     UIApplicationState state =[[UIApplication sharedApplication] applicationState];
     
     NSDictionary *dict = [[NSDictionary alloc] initWithObjectsAndKeys: identifier, @"identifier", userInfo, @"userInfo", @(state), @"applicationState", nil];
