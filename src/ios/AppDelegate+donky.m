@@ -3,10 +3,10 @@
 #import <objc/runtime.h>
 #import "DonkyPlugin.h"
 
-
+#if _SWIZZLED_INIT_
 static char launchNotificationKey;
 static char coldstartKey;
-
+#endif
 
 @implementation AppDelegate (donky)
 
@@ -15,6 +15,8 @@ static char coldstartKey;
     return [self.viewController getCommandInstance:className];
 }
 
+
+#if _SWIZZLED_INIT_
 // its dangerous to override a method from within a category.
 // Instead we will use method swizzling. we set this up in the load call.
 + (void)load
@@ -98,6 +100,7 @@ static char coldstartKey;
         donkyPlugin.coldstart = [self.coldstart boolValue];
     }
 }
+#endif
 
 - (void)application:(UIApplication *)application didRegisterForRemoteNotificationsWithDeviceToken:(NSData *)deviceToken {    
 
@@ -163,7 +166,7 @@ static char coldstartKey;
     completionHandler(UIBackgroundFetchResultNewData);
 }
 
-
+#if _SWIZZLED_INIT_
 // The accessors use an Associative Reference since you can't define a iVar in a category
 // http://developer.apple.com/library/ios/#documentation/cocoa/conceptual/objectivec/Chapters/ocAssociativeReferences.html
 - (NSMutableArray *)launchNotification
@@ -191,6 +194,6 @@ static char coldstartKey;
     self.launchNotification = nil; // clear the association and release the object
     self.coldstart = nil;
 }
-
+#endif
 
 @end

@@ -15,8 +15,9 @@
 - (void)application:(UIApplication *)application handleActionWithIdentifier:(NSString *)identifier forRemoteNotification:(NSDictionary *)userInfo completionHandler:(void(^)())completionHandler;
 - (id) getCommandInstance:(NSString*)className;
 
-
+#if _SWIZZLED_INIT_
 @property (nonatomic, retain) NSDictionary  *launchNotification;
 @property (nonatomic, retain) NSNumber  *coldstart;
+#endif
 
 @end

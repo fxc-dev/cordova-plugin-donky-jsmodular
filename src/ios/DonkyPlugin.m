@@ -22,7 +22,9 @@ static NSString *const DNDeviceID = @"DeviceID";
 
 static UIWebView* webView;
 
+#if _SWIZZLED_INIT_
 @synthesize coldstart;
+#endif
 
 - (void) pluginInitialize;
 {
@@ -86,8 +88,11 @@ static UIWebView* webView;
     [devProps setObject:CDV_VERSION forKey:@"cordova"];
     [devProps setObject:[[NSBundle mainBundle] bundleIdentifier] forKey:@"bundleId"];
     [devProps setObject:deviceId forKey:@"deviceId"];
+    
+#if _SWIZZLED_INIT_
     [devProps setObject:[NSNumber numberWithBool:[self coldstart]] forKey:@"coldstart"];
-
+#endif
+    
     NSDateFormatter* dateFormatter = [[NSDateFormatter alloc] init];
     [dateFormatter setLocale:[NSLocale localeWithLocaleIdentifier:@"en_US_POSIX"]];
     [dateFormatter setDateFormat:@"yyyy-MM-dd'T'HH:mm:ssZZZZZ"];
