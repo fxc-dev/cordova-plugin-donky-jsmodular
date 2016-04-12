@@ -66,6 +66,10 @@ function DonkyPlugin(){
                 donkyCore.subscribeToLocalEvent("pushNotification", function (event) {
                     console.log("pushNotification: " + JSON.stringify(event.data, null, 4));
                     var notificationId = event.data.userInfo.notificationId;
+                    
+                    if(self.applicationStateOnPush === undefined){
+                        self.applicationStateOnPush = event.data.applicationState;                    
+                    }
                                        
                     donkyCore.donkyNetwork.getServerNotification(notificationId, function(notification){
                         if(notification){
@@ -155,7 +159,7 @@ function DonkyPlugin(){
                           
 
                 /**
-                 * 
+                 * FUnction to quere an AppSession notification
                  */
                 function queueAppSession(){
 
@@ -164,21 +168,32 @@ function DonkyPlugin(){
                         "startTimeUtc": self.launchTimeUtc,
                         "endTimeUtc": new Date().toISOString(),
                         "operatingSystem": donkyCore.donkyAccount.getOperatingSystem(),
-                        "sessionTrigger": self.coldstart ? "Notification" : "None" 
+                        // TODO: make non-ios specific
+                        // 0 === UIApplicationStateActive
+                        // 1 === UIApplicationStateInactive
+                        // 2 === UIApplicationStateBackground
+                        "sessionTrigger" : (self.applicationStateOnPush !== undefined && self.applicationStateOnPush !== 0) ? "Notification" : "None"
                     };
+                  
+                    self.applicationStateOnPush = undefined;
                     
                     donkyCore.queueClientNotifications(sessionClientNotification);                    
                 }
                           
                 /**
-                 * 
+                 * FUnction to quere an AppLaunch notification 
                  */
                 function queueAppLaunch(){
+                                                            
                     var launchClientNotification = {
                         Type: "AppLaunch",
                         "launchTimeUtc": self.launchTimeUtc,
                         "operatingSystem": donkyCore.donkyAccount.getOperatingSystem(),
-                        "sessionTrigger" : self.coldstart ? "Notification" : "None"
+                        // TODO: make non-ios specific
+                        // 0 === UIApplicationStateActive
+                        // 1 === UIApplicationStateInactive
+                        // 2 === UIApplicationStateBackground
+                        "sessionTrigger" : (self.applicationStateOnPush !== undefined && self.applicationStateOnPush !== 0) ? "Notification" : "None"
                     };
 
                     donkyCore.queueClientNotifications(launchClientNotification);                    
@@ -197,12 +212,12 @@ function DonkyPlugin(){
                     self.registerForPush(function(result){
                         console.log("registerForPush succeeded");
                     }, function(error){
-                        consloe.log("registerForPush failed");
+                        console.log("registerForPush failed");
                     },
                     buttonSets);
                 });
                 
-                /**
+               /**
                 *
                 */            
                 donkyCore.subscribeToLocalEvent("AppBackgrounded", function(event) {
@@ -210,13 +225,17 @@ function DonkyPlugin(){
                     queueAppSession();
                 });        
                 
-                /**
-                *
+               /**
+                * Need to determine whether app was foregrounded / launched due to a push or just opened.
+                * Foreground event comes in before push event (which contains app state) 
                 */            
                 donkyCore.subscribeToLocalEvent("AppForegrounded", function(event) {
                     self.launchTimeUtc = new Date().toISOString();
-                    
-                    queueAppLaunch();
+
+                    setTimeout(function(){
+                        queueAppLaunch();                    
+                    },1000);
+                                        
                 });        
             }
             
