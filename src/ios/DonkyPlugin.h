@@ -1,6 +1,6 @@
 #import <Cordova/CDV.h>
 
-@interface Donky : CDVPlugin
+@interface DonkyPlugin : CDVPlugin
 
 - (void) getPlatformInfo:(CDVInvokedUrlCommand*)command;
 - (void) registerForPush:(CDVInvokedUrlCommand*)command;

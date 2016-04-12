@@ -1,7 +1,7 @@
 
 #import "AppDelegate+donky.h"
 #import <objc/runtime.h>
-#import "Donky.h"
+#import "DonkyPlugin.h"
 
 
 static char launchNotificationKey;
@@ -92,11 +92,10 @@ static char coldstartKey;
     
     UIApplication *application = notification.object;
     
-    Donky *donky = [self getCommandInstance:@"donky"];
-    
+    DonkyPlugin *donkyPlugin = [self getCommandInstance:@"donky"];
     
     if (self.launchNotification) {
-        donky.coldstart = [self.coldstart boolValue];
+        donkyPlugin.coldstart = [self.coldstart boolValue];
     }
 }
 
@@ -117,12 +116,12 @@ static char coldstartKey;
     }
 
     NSDictionary *dict = [[NSDictionary alloc] initWithObjectsAndKeys: hexString, @"deviceToken", nil];
-    [Donky notify: @"pushRegistrationSucceeded" withData: dict];
+    [DonkyPlugin notify: @"pushRegistrationSucceeded" withData: dict];
 }
 
 - (void)application:(UIApplication *)application didFailToRegisterForRemoteNotificationsWithError:(NSError *)error {
     NSDictionary *dict = [[NSDictionary alloc] initWithObjectsAndKeys: [error localizedDescription], @"error", nil];
-    [Donky notify: @"pushRegistrationFailed" withData: dict];
+    [DonkyPlugin notify: @"pushRegistrationFailed" withData: dict];
 }
 
 /**
@@ -141,7 +140,7 @@ static char coldstartKey;
         //TODO: store somewhere that the plugin can access in pluginInitialize - it can then the client
     }
     
-    [Donky notify: @"pushNotification" withData: dict];
+    [DonkyPlugin notify: @"pushNotification" withData: dict];
     completionHandler(UIBackgroundFetchResultNewData);
 }
 
@@ -160,7 +159,7 @@ static char coldstartKey;
         //TODO: store somewhere that the plugin can access in pluginInitialize - it can then the client
     }
     
-    [Donky notify: @"handleButtonAction" withData: dict];
+    [DonkyPlugin notify: @"handleButtonAction" withData: dict];
     completionHandler(UIBackgroundFetchResultNewData);
 }
 

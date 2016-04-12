@@ -1,7 +1,7 @@
 #include <sys/types.h>
 #include <sys/sysctl.h>
 
-#import "Donky.h"
+#import "DonkyPlugin.h"
 #import "DNKeychainHelper.h"
 #import "PushHelper.h"
 #import "NSDictionary+DNJsonDictionary.h"
@@ -18,7 +18,7 @@ static NSString *const DNDeviceID = @"DeviceID";
 (CORDOVA_VERSION_MIN_REQUIRED % 10000) % 100]
 
 
-@implementation Donky
+@implementation DonkyPlugin
 
 static UIWebView* webView;
 
@@ -32,26 +32,20 @@ static UIWebView* webView;
         webView = (UIWebView *)self.webViewEngine.engineWebView;
     }
     
-    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(onPause) name:UIApplicationDidEnterBackgroundNotification object:nil];
+    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(onPause) name:UIApplicationWillResignActiveNotification object:nil];
     
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(onResume) name:UIApplicationWillEnterForegroundNotification object:nil];
     
-    /**
-     * TODO: is there a stored push notification that needs to be either
-     *  [Donky notify: @"pushNotification" withData: dict];
-     * or
-     *  [Donky notify: @"handleButtonAction" withData: dict]; 
-     */
 }
 
 - (void) onPause {
-    NSLog(@"UIApplicationDidEnterBackgroundNotification");
-    [Donky notify: @"AppBackgrounded" withData: nil];
+    NSLog(@"UIApplicationWillResignActiveNotification");
+    [DonkyPlugin notify: @"AppBackgrounded" withData: nil];
 }
 
 - (void) onResume {
     NSLog(@"UIApplicationDidBecomeActiveNotification");
-    [Donky notify: @"AppForegrounded" withData: nil];
+    [DonkyPlugin notify: @"AppForegrounded" withData: nil];
 }
 
 
@@ -93,6 +87,11 @@ static UIWebView* webView;
     [devProps setObject:[[NSBundle mainBundle] bundleIdentifier] forKey:@"bundleId"];
     [devProps setObject:deviceId forKey:@"deviceId"];
     [devProps setObject:[NSNumber numberWithBool:[self coldstart]] forKey:@"coldstart"];
+
+    NSDateFormatter* dateFormatter = [[NSDateFormatter alloc] init];
+    [dateFormatter setLocale:[NSLocale localeWithLocaleIdentifier:@"en_US_POSIX"]];
+    [dateFormatter setDateFormat:@"yyyy-MM-dd'T'HH:mm:ssZZZZZ"];
+    [devProps setObject:[dateFormatter stringFromDate:[NSDate date]] forKey:@"launchTimeUtc"];
 
     CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:devProps];
 
@@ -197,14 +196,14 @@ static UIWebView* webView;
             
             NSLog(@"%@", jsString);
             
-            [Donky executeJavascript: jsString];
+            [DonkyPlugin executeJavascript: jsString];
             
         }else{
             NSString* jsString = [NSString stringWithFormat:@"window.cordova.plugins.donky.callback(\'%@\');", event];
             
             NSLog(@"%@", jsString);
             
-            [Donky executeJavascript: jsString];
+            [DonkyPlugin executeJavascript: jsString];
 
         }
     }

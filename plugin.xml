@@ -32,12 +32,12 @@ xmlns="http://apache.org/cordova/ns/plugins/1.0"
     
     <config-file target="config.xml" parent="/widget">
       <feature name="donky">
-        <param name="ios-package" value="Donky" />
+        <param name="ios-package" value="DonkyPlugin" />
       </feature>
     </config-file>
 
-    <header-file src="src/ios/Donky.h" target-dir="DonkyPlugin"/>
-    <source-file src="src/ios/Donky.m" target-dir="DonkyPlugin"/>
+    <header-file src="src/ios/DonkyPlugin.h" target-dir="DonkyPlugin"/>
+    <source-file src="src/ios/DonkyPlugin.m" target-dir="DonkyPlugin"/>
 
     <header-file src="src/ios/DNKeychainHelper.h" target-dir="DonkyPlugin"/>
     <source-file src="src/ios/DNKeychainHelper.m" target-dir="DonkyPlugin"/>

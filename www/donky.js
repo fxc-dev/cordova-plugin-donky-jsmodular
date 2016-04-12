@@ -48,6 +48,7 @@ function DonkyPlugin(){
             self.bundleId = info.bundleId;
             self.deviceId = info.deviceId;
             self.coldstart = info.coldstart;
+            self.launchTimeUtc = info.launchTimeUtc;
                 
             // These need to be available ... (integrators responsibility to load)        
             if(window.donkyCore){
@@ -153,7 +154,6 @@ function DonkyPlugin(){
                     console.error("pushRegistrationFailed", JSON.stringify(event.data.error, null, 4));                        
                 }, false);
                           
-                var launchTimeUtc = new Date();
 
                 /**
                  * 
@@ -162,13 +162,13 @@ function DonkyPlugin(){
 
                     var sessionClientNotification = {
                         Type: "AppSession",
-                        "startTimeUtc": _util.formatDate(lastSessionStartTime),
-                        "endTimeUtc": _util.formatDate(lastSessionEndTime),
+                        "startTimeUtc": self.launchTimeUtc,
+                        "endTimeUtc": new Date().toISOString(),
                         "operatingSystem": donkyCore.donkyAccount.getOperatingSystem(),
-                        "sessionTrigger": "None"
+                        "sessionTrigger": self.coldstart ? "Notification" : "None" 
                     };
                     
-                    donkyCore.queueClientNotifications(launchClientNotification);                    
+                    donkyCore.queueClientNotifications(sessionClientNotification);                    
                 }
                           
                 /**
@@ -177,9 +177,9 @@ function DonkyPlugin(){
                 function queueAppLaunch(){
                     var launchClientNotification = {
                         Type: "AppLaunch",
-                        "launchTimeUtc": _util.formatDate(new Date().valueOf()),
+                        "launchTimeUtc": self.launchTimeUtc,
                         "operatingSystem": donkyCore.donkyAccount.getOperatingSystem(),
-                        "sessionTrigger" : "None"
+                        "sessionTrigger" : self.coldstart ? "Notification" : "None"
                     };
 
                     donkyCore.queueClientNotifications(launchClientNotification);                    
@@ -189,7 +189,9 @@ function DonkyPlugin(){
                 // This event is ALWAYS published on succesful initialisation - hook into it and run our analysis ...
                 donkyCore.subscribeToLocalEvent("DonkyInitialised", function(event) {
 
-                    console.log("DonkyInitialised event received in DonkyPlugin()");                    
+                    console.log("DonkyInitialised event received in DonkyPlugin()");   
+                    
+                    queueAppLaunch();                 
                     
                     var buttonSets = donkyCore.getiOSButtonCategories();                                                            
 
@@ -206,13 +208,16 @@ function DonkyPlugin(){
                 */            
                 donkyCore.subscribeToLocalEvent("AppBackgrounded", function(event) {
                     // queue an AppSession 
+                    queueAppSession();
                 });        
                 
                 /**
                 *
                 */            
                 donkyCore.subscribeToLocalEvent("AppForegrounded", function(event) {
-                    // retart AppSession.launchTimeUtc
+                    self.launchTimeUtc = new Date().toISOString();
+                    
+                    queueAppLaunch();
                 });        
                 
                                 
