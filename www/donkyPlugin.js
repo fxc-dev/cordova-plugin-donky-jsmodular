@@ -62,7 +62,6 @@ function DonkyPlugin(){
 
                 /**
                  * A new push notification has arrived
-                 *
                  */
                 donkyCore.subscribeToLocalEvent("pushNotification", function (event) {
                     console.log("pushNotification: " + JSON.stringify(event.data, null, 4));
@@ -138,7 +137,7 @@ function DonkyPlugin(){
 
                     var pushConfigurationRequest = {
                         registrationId: event.data.deviceToken,
-                        bundleId: window.cordova.plugins.donky.bundleId
+                        bundleId: window.cordova.plugins.donkyPlugin.bundleId
                     };
 
                     console.log("pushConfigurationRequest", JSON.stringify(pushConfigurationRequest, null, 4));
@@ -219,8 +218,6 @@ function DonkyPlugin(){
                     
                     queueAppLaunch();
                 });        
-                
-                                
             }
             
             channel.onCordovaInfoReady.fire();                        

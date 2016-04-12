@@ -10,8 +10,8 @@ xmlns="http://apache.org/cordova/ns/plugins/1.0"
     <license>Apache 2.0</license>
     <keywords>cordova,donky</keywords>
 
-  <js-module src="www/donky.js" name="donky">
-    <clobbers target="cordova.plugins.donky" />
+  <js-module src="www/donkyPlugin.js" name="donky">
+    <clobbers target="cordova.plugins.donkyPlugin" />
   </js-module>
 
 
