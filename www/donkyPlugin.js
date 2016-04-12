@@ -47,7 +47,6 @@ function DonkyPlugin(){
             self.cordova = info.cordova;
             self.bundleId = info.bundleId;
             self.deviceId = info.deviceId;
-            self.coldstart = info.coldstart;
             self.launchTimeUtc = info.launchTimeUtc;
                 
             // These need to be available ... (integrators responsibility to load)        
