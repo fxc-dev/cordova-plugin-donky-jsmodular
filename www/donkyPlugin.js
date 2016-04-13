@@ -11,6 +11,18 @@ channel.waitForInitialization('onCordovaInfoReady');
  */
 function DonkyPlugin(){
 
+
+    function pluginLog(message){
+        console.log(message);
+        if(window.donkyCore){
+            
+            donkyCore.publishLocalEvent({ type: "DonkyPluginLogMessage", data: message });
+                                                    
+        }                                
+           
+    }
+
+
     var self = this;
 
     function syncBadgeCount(){
@@ -19,23 +31,27 @@ function DonkyPlugin(){
         var badgeCount = 0;
 
         if(window.donkyPushLogic){
-            badgeCount += donkyPushLogic.getMessageCount();                                        
+            var pushCount = donkyPushLogic.getMessageCount();
+            pluginLog("pushCount: " + pushCount ); 
+            badgeCount += pushCount;                                        
         }                                
         
         if(window.donkyRichLogic){
-            badgeCount += donkyRichLogic.getMessageCount().unreadRichMessageCount;                                        
+            var unreadRichCount = donkyRichLogic.getMessageCount().unreadRichMessageCount
+            pluginLog("unreadRichCount: " + unreadRichCount ); 
+            badgeCount += unreadRichCount;                                        
         }                                
                                 
         if(window.donkyMessagingCommon){
+            pluginLog("setBadgeCount(" + badgeCount + ")");
             donkyMessagingCommon.setBadgeCount(badgeCount, true);                            
         }
         
-        self.setBadgeCount(function(){},function(){},badgeCount);
-        
+        self.setBadgeCount(function(){},function(){},badgeCount);        
     }
 
     channel.onCordovaReady.subscribe(function() {
-        console.log("onCordovaReady ;-)");
+        pluginLog("onCordovaReady");
         
         self.getPlatformInfo(function(info){
             self.available = true;
@@ -63,7 +79,7 @@ function DonkyPlugin(){
                  * A new push notification has arrived
                  */
                 donkyCore.subscribeToLocalEvent("pushNotification", function (event) {
-                    console.log("pushNotification: " + JSON.stringify(event.data, null, 4));
+                    pluginLog("pushNotification: " + JSON.stringify(event.data, null, 4));
                     var notificationId = event.data.userInfo.notificationId;
                     
                     if(self.applicationStateOnPush === undefined){
@@ -75,14 +91,19 @@ function DonkyPlugin(){
                             // this could be a push or a rich message ...
                             switch(notification.type){
                                 case "SimplePushMessage":
+                                    /**
+                                     * Under what cicuumstances should we redisplay this ?
+                                     * If app was backgrounded/not running when push came in the user would have already tapped this so we should not display again
+                                     * We need to send the correct notifications back to donky though
+                                     */
                                     if(window.donkyPushLogic){
-                                        donkyPushLogic.processPushMessage(notification);                                        
+                                        donkyPushLogic.processPushMessage(notification);
                                     }
                                 break;
                                 
                                 case "RichMessage":
                                     if(window.donkyRichLogic){
-                                        donkyRichLogic.processRichMessage(notification);                                        
+                                        donkyRichLogic.processRichMessage(notification);
                                     }                                
                                 break;
                             }                           
@@ -92,6 +113,13 @@ function DonkyPlugin(){
                         
                     });
                 });        
+                
+                /**
+                 * 
+                 */
+                donkyCore.subscribeToLocalEvent("PushMessageDeleted", function (event) {
+                    syncBadgeCount();
+                });                
                 
                 /**
                  * 
@@ -106,7 +134,7 @@ function DonkyPlugin(){
                  * !!! POTENTIAL RACE CONDITION CENTRAL HERE !!!  
                  */
                 donkyCore.subscribeToLocalEvent("handleButtonAction", function (event) {
-                    console.log("handleButtonAction", JSON.stringify(event.data, null, 4));
+                    pluginLog("handleButtonAction", JSON.stringify(event.data, null, 4));
                     
                     // If SDK not initialised, we can't make rest calls (even if we have a token)  should I change this ?
                     
@@ -136,24 +164,24 @@ function DonkyPlugin(){
                  * We have a device token now which needs to be sent to donky
                  */
                 donkyCore.subscribeToLocalEvent("pushRegistrationSucceeded", function (event) {
-                    console.log("pushRegistrationSucceeded", JSON.stringify(event.data.deviceToken, null, 4));
+                    pluginLog("pushRegistrationSucceeded", JSON.stringify(event.data.deviceToken, null, 4));
 
                     var pushConfigurationRequest = {
                         registrationId: event.data.deviceToken,
                         bundleId: window.cordova.plugins.donkyPlugin.bundleId
                     };
 
-                    console.log("pushConfigurationRequest", JSON.stringify(pushConfigurationRequest, null, 4));
+                    pluginLog("pushConfigurationRequest", JSON.stringify(pushConfigurationRequest, null, 4));
 
                     donkyCore.donkyAccount.sendPushConfiguration(pushConfigurationRequest, function(result){
                         
-                        console.log("sendPushConfiguration result: ", JSON.stringify(result, null, 4));
+                        pluginLog("sendPushConfiguration result: ", JSON.stringify(result, null, 4));
                     });
                                                                                                                            
                 }, false);
 
                 donkyCore.subscribeToLocalEvent("pushRegistrationFailed", function (event) {
-                    console.error("pushRegistrationFailed", JSON.stringify(event.data.error, null, 4));                        
+                    pluginLog("pushRegistrationFailed", JSON.stringify(event.data.error, null, 4));                        
                 }, false);
                           
 
@@ -202,16 +230,16 @@ function DonkyPlugin(){
                 // This event is ALWAYS published on succesful initialisation - hook into it and run our analysis ...
                 donkyCore.subscribeToLocalEvent("DonkyInitialised", function(event) {
 
-                    console.log("DonkyInitialised event received in DonkyPlugin()");   
+                    pluginLog("DonkyInitialised event received in DonkyPlugin()");   
                     
                     queueAppLaunch();                 
                     
                     var buttonSets = donkyCore.getiOSButtonCategories();                                                            
 
                     self.registerForPush(function(result){
-                        console.log("registerForPush succeeded");
+                        pluginLog("registerForPush succeeded");
                     }, function(error){
-                        console.log("registerForPush failed");
+                        pluginLog("registerForPush failed");
                     },
                     buttonSets);
                 });
