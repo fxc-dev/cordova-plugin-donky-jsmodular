@@ -11,17 +11,18 @@ channel.waitForInitialization('onCordovaInfoReady');
  */
 function DonkyPlugin(){
 
+    var AppStates= {
+        active: 0,
+        inactive: 1,
+        background: 2       
+    }
 
     function pluginLog(message){
         console.log(message);
-        if(window.donkyCore){
-            
-            donkyCore.publishLocalEvent({ type: "DonkyPluginLogMessage", data: message });
-                                                    
-        }                                
-           
+        if(window.donkyCore){            
+            donkyCore.publishLocalEvent({ type: "DonkyPluginLogMessage", data: message });                                                    
+        }                                           
     }
-
 
     var self = this;
 
@@ -88,29 +89,41 @@ function DonkyPlugin(){
                                        
                     donkyCore.donkyNetwork.getServerNotification(notificationId, function(notification){
                         if(notification){
-                            // this could be a push or a rich message ...
-                            switch(notification.type){
-                                case "SimplePushMessage":
-                                    /**
-                                     * Under what cicuumstances should we redisplay this ?
-                                     * If app was backgrounded/not running when push came in the user would have already tapped this so we should not display again
-                                     * We need to send the correct notifications back to donky though
-                                     */
-                                    if(window.donkyPushLogic){
-                                        donkyPushLogic.processPushMessage(notification);
-                                    }
-                                break;
+                            // Haver we already processed this ? doubt it ....
+                            if(!donkyCore.findNotificationInRecentCache(notification.id)){
+                                // prevent us getting the message again from signalr ....
+                                donkyCore.addNotificationToRecentCache(notification.id);
                                 
-                                case "RichMessage":
-                                    if(window.donkyRichLogic){
-                                        donkyRichLogic.processRichMessage(notification);
-                                    }                                
-                                break;
-                            }                           
+                                // this could be a push or a rich message ...
+                                switch(notification.type){
+                                    case "SimplePushMessage":
+                                        /**
+                                         * Under what cicuumstances should we redisplay this ?
+                                         * If app was backgrounded/not running when push came in the user would have already tapped this so we should not display again
+                                         * We need to send the correct notifications back to donky though
+                                         */
+                                        if(window.donkyPushLogic){
+                                            // TODO: add enum for states and make platform independant
+                                            if(event.data.applicationState !== AppStates.active){
+                                                // we want to not see this ....
+                                                // if tghis comes in via a sync it will just be acknowledged ...
+                                                donkyCore.addNotificationToRecentCache(notification.id);                                             
+                                            }else{
+                                                donkyPushLogic.processPushMessage(notification);    
+                                            }
+                                        }
+                                    break;
+                                    
+                                    case "RichMessage":
+                                        if(window.donkyRichLogic){
+                                            donkyRichLogic.processRichMessage(notification);
+                                        }                                
+                                    break;
+                                }                                                           
+                            }
                         }
                         
-                        syncBadgeCount();
-                        
+                        syncBadgeCount();                        
                     });
                 });        
                 
@@ -130,8 +143,6 @@ function DonkyPlugin(){
 
                 /**
                  * A button has been clicked (iOS)
-                 * TODO: User is done with this msg so make sure it doesn't get displayed a second time ...
-                 * !!! POTENTIAL RACE CONDITION CENTRAL HERE !!!  
                  */
                 donkyCore.subscribeToLocalEvent("handleButtonAction", function (event) {
                     pluginLog("handleButtonAction", JSON.stringify(event.data, null, 4));
@@ -140,7 +151,8 @@ function DonkyPlugin(){
                     
                     var buttonText = event.data.identifier;
                     var notificationId = event.data.userInfo.notificationId;
-                    
+                    donkyCore.addNotificationToRecentCache(notificationId);
+                                        
                     donkyCore.donkyNetwork.getServerNotification(notificationId, function(notification){
                         if(notification){
                             
@@ -195,11 +207,7 @@ function DonkyPlugin(){
                         "startTimeUtc": self.launchTimeUtc,
                         "endTimeUtc": new Date().toISOString(),
                         "operatingSystem": donkyCore.donkyAccount.getOperatingSystem(),
-                        // TODO: make non-ios specific
-                        // 0 === UIApplicationStateActive
-                        // 1 === UIApplicationStateInactive
-                        // 2 === UIApplicationStateBackground
-                        "sessionTrigger" : (self.applicationStateOnPush !== undefined && self.applicationStateOnPush !== 0) ? "Notification" : "None"
+                        "sessionTrigger" : (self.applicationStateOnPush !== undefined && self.applicationStateOnPush !== AppStates.active) ? "Notification" : "None"
                     };
                   
                     self.applicationStateOnPush = undefined;
@@ -216,11 +224,7 @@ function DonkyPlugin(){
                         Type: "AppLaunch",
                         "launchTimeUtc": self.launchTimeUtc,
                         "operatingSystem": donkyCore.donkyAccount.getOperatingSystem(),
-                        // TODO: make non-ios specific
-                        // 0 === UIApplicationStateActive
-                        // 1 === UIApplicationStateInactive
-                        // 2 === UIApplicationStateBackground
-                        "sessionTrigger" : (self.applicationStateOnPush !== undefined && self.applicationStateOnPush !== 0) ? "Notification" : "None"
+                        "sessionTrigger" : (self.applicationStateOnPush !== undefined && self.applicationStateOnPush !== AppStates.active) ? "Notification" : "None"
                     };
 
                     donkyCore.queueClientNotifications(launchClientNotification);                    
