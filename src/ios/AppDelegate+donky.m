@@ -94,7 +94,7 @@ static char coldstartKey;
     
     UIApplication *application = notification.object;
     
-    DonkyPlugin *donkyPlugin = [self getCommandInstance:@"donky"];
+    DonkyPlugin *donkyPlugin = [self getCommandInstance:@"DonkyPlugin"];
     
     if (self.launchNotification) {
         donkyPlugin.coldstart = [self.coldstart boolValue];
@@ -165,6 +165,25 @@ static char coldstartKey;
     [DonkyPlugin notify: @"handleButtonAction" withData: dict];
     completionHandler(UIBackgroundFetchResultNewData);
 }
+
+#if _HANDLE_USER_ACTIVITY_
+- (BOOL)application:(UIApplication *)application continueUserActivity:(NSUserActivity *)userActivity restorationHandler:(void (^)(NSArray * _Nullable))restorationHandler {
+    // ignore activities that are not for Universal Links
+    if (![userActivity.activityType isEqualToString:NSUserActivityTypeBrowsingWeb] || userActivity.webpageURL == nil) {
+        return NO;
+    }
+    
+    // get instance of the plugin and let it handle the userActivity object
+    DonkyPlugin *donkyPlugin = [self getCommandInstance:@"DonkyPlugin"];
+    
+    if (donkyPlugin == nil) {
+        return NO;
+    }
+    
+    return [donkyPlugin handleUserActivity:userActivity];
+}
+#endif
+
 
 #if _SWIZZLED_INIT_
 // The accessors use an Associative Reference since you can't define a iVar in a category

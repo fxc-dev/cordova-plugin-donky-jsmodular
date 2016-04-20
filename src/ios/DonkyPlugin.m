@@ -215,6 +215,15 @@ static UIWebView* webView;
     
 }
 
+#if _HANDLE_USER_ACTIVITY_
+- (BOOL)handleUserActivity:(NSUserActivity *)userActivity {
+    
+    NSURL *launchURL = userActivity.webpageURL;
 
+    NSLog(@"%@", launchURL);
+    
+    return NO;
+}
+#endif
 
 @end

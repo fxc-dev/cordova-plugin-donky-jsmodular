@@ -143,6 +143,7 @@ function DonkyPlugin(){
 
                 /**
                  * A button has been clicked (iOS)
+                 * TODO: Honour the action - URL / Deep Link
                  */
                 donkyCore.subscribeToLocalEvent("handleButtonAction", function (event) {
                     pluginLog("handleButtonAction", JSON.stringify(event.data, null, 4));

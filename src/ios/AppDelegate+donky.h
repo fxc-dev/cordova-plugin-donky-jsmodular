@@ -13,6 +13,11 @@
 
 - (void)pushPluginOnApplicationDidBecomeActive:(UIApplication *)application;
 - (void)application:(UIApplication *)application handleActionWithIdentifier:(NSString *)identifier forRemoteNotification:(NSDictionary *)userInfo completionHandler:(void(^)())completionHandler;
+
+#if _HANDLE_USER_ACTIVITY_
+- (BOOL)application:(UIApplication *)application continueUserActivity:(NSUserActivity *)userActivity restorationHandler:(void (^)(NSArray * _Nullable))restorationHandler;
+#endif
+
 - (id) getCommandInstance:(NSString*)className;
 
 #if _SWIZZLED_INIT_
