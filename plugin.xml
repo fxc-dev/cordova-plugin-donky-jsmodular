@@ -19,11 +19,11 @@ xmlns="http://apache.org/cordova/ns/plugins/1.0"
     <platform name="android">
         <config-file target="res/xml/config.xml" parent="/*">
             <feature name="donky" >
-                <param name="android-package" value="com.donky.plugin.Donky"/>
+                <param name="android-package" value="com.donky.plugin.DonkyPlugin"/>
             </feature>
         </config-file>
 
-        <source-file src="src/android/Donky.java" target-dir="src/com/donky/plugin/" />
+        <source-file src="src/android/DonkyPlugin.java" target-dir="src/com/donky/plugin/" />
     </platform>
 
   

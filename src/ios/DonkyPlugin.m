@@ -175,6 +175,27 @@ static UIWebView* webView;
         
 }
 
+- (void)openDeepLink:(CDVInvokedUrlCommand*)command;
+{
+    NSString* linkValue = [[command arguments] objectAtIndex:0];
+    CDVPluginResult* pluginResult = nil;
+    
+    if(linkValue != nil && ![linkValue isKindOfClass:[NSNull class]])
+    {
+        NSURL *url = [NSURL URLWithString:linkValue];
+        NSLog(@"handleDeepLink: Opening link: %@", linkValue);
+        
+        pluginResult = [[UIApplication sharedApplication] openURL:url] ? [CDVPluginResult resultWithStatus:CDVCommandStatus_OK] : [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR];
+    }
+    else
+    {
+        pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR];
+    }
+    
+    [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+}
+
+
 + (void) executeJavascript:(NSString *)jsString{
 
     if ([webView respondsToSelector:@selector(stringByEvaluatingJavaScriptFromString:)]) {
@@ -214,6 +235,7 @@ static UIWebView* webView;
     }
     
 }
+
 
 #if _HANDLE_USER_ACTIVITY_
 - (BOOL)handleUserActivity:(NSUserActivity *)userActivity {

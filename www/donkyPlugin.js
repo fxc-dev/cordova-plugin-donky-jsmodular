@@ -326,13 +326,24 @@ DonkyPlugin.prototype.registerForPush = function(successCallback, errorCallback,
 
 /**
  * Method to allow integrator to explicitly set the application badge count
- * @param {Callback} successCallback - callback to call if method was succsful with the deviceId
+ * @param {Callback} successCallback - callback to call if method was succsful
  * @param {Callback} errorCallback - callback to call if method failed with the error messag
- * @param {Nimber} count - the count to set to
+ * @param {Number} count - the count to set to
  */
 DonkyPlugin.prototype.setBadgeCount = function(successCallback, errorCallback, count){
     cordova.exec(successCallback, errorCallback, "donky", "setBadgeCount", [count]);        
 }
+
+/**
+ * Method to allow integrator to open a deep link
+ * @param {Callback} successCallback - callback to call if method was succsful
+ * @param {Callback} errorCallback - callback to call if method failed with the error messag
+ * @param {String} link - the link to open
+ */
+DonkyPlugin.prototype.openDeepLink = function(successCallback, errorCallback, link){
+    cordova.exec(successCallback, errorCallback, "donky", "openDeepLink", [link]);        
+}
+
 
 
 module.exports = new DonkyPlugin();

@@ -6,13 +6,13 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import android.provider.Settings;
 
-public class Donky extends CordovaPlugin {
+public class DonkyPlugin extends CordovaPlugin {
 
 
     /**
      * Constructor.
      */
-    public Donky() {
+    public DonkyPlugin() {
     }
 
     /**
