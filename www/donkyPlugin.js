@@ -86,43 +86,22 @@ function DonkyPlugin(){
                     if(self.applicationStateOnPush === undefined){
                         self.applicationStateOnPush = event.data.applicationState;                    
                     }
-                                       
+                                                                                                   
                     donkyCore.donkyNetwork.getServerNotification(notificationId, function(notification){
                         if(notification){
                             // Haver we already processed this ? doubt it ....
                             if(!donkyCore.findNotificationInRecentCache(notification.id)){
-                                // prevent us getting the message again from signalr ....
-                                donkyCore.addNotificationToRecentCache(notification.id);
                                 
-                                // this could be a push or a rich message ...
-                                switch(notification.type){
-                                    case "SimplePushMessage":
-                                        /**
-                                         * Under what cicuumstances should we redisplay this ?
-                                         * If app was backgrounded/not running when push came in the user would have already tapped this so we should not display again
-                                         * We need to send the correct notifications back to donky though
-                                         */
-                                        if(window.donkyPushLogic){
-                                            // TODO: add enum for states and make platform independant
-                                            if(event.data.applicationState !== AppStates.active){
-                                                // we want to not see this ....
-                                                // if tghis comes in via a sync it will just be acknowledged ...
-                                                donkyCore.addNotificationToRecentCache(notification.id);                                             
-                                            }else{
-                                                donkyPushLogic.processPushMessage(notification);    
-                                            }
-                                        }
-                                    break;
-                                    
-                                    case "RichMessage":
-                                        if(window.donkyRichLogic){
-                                            donkyRichLogic.processRichMessage(notification);
-                                        }                                
-                                    break;
-                                }                                                           
+                                // need to handle the case when a push message has been received when the app was not active (and noty display it again)                                                                              
+                                if( notification.type === SimplePushMessage && event.data.applicationState !== AppStates.active){
+                                    donkyCore.addNotificationToRecentCache(notification.id);
+                                }else{
+                                    donkyCore._processServerNotifications([notification]);    
+                                }                                       
+                                                   
                             }
                         }
-                        
+                        // TODO: only do on receipt of simplePush or richMessage
                         syncBadgeCount();                        
                     });
                 });        
