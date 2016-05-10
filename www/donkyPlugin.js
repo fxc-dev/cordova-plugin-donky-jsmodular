@@ -93,16 +93,17 @@ function DonkyPlugin(){
                             if(!donkyCore.findNotificationInRecentCache(notification.id)){
                                 
                                 // need to handle the case when a push message has been received when the app was not active (and noty display it again)                                                                              
-                                if( notification.type === SimplePushMessage && event.data.applicationState !== AppStates.active){
+                                if( notification.type === "SimplePushMessage" && event.data.applicationState !== AppStates.active){
                                     donkyCore.addNotificationToRecentCache(notification.id);
                                 }else{
                                     donkyCore._processServerNotifications([notification]);    
-                                }                                       
-                                                   
+                                }
+                                
+                                if(notification.type === "SimplePushMessage" || notification.type === "RichMessage"){
+                                    syncBadgeCount();
+                                }                                                                                          
                             }
-                        }
-                        // TODO: only do on receipt of simplePush or richMessage
-                        syncBadgeCount();                        
+                        }                                                
                     });
                 });        
                 
