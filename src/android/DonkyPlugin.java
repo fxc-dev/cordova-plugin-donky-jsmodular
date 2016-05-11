@@ -6,15 +6,29 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import android.provider.Settings;
 import org.json.JSONObject;
+import android.content.Context;
+import android.util.Log;
 
 public class DonkyPlugin extends CordovaPlugin {
 
+    public static final String LOG_TAG = "DonkyPlugin";
+    private static CordovaWebView gWebView;
+    private static boolean gForeground = false;
 
     /**
      * Constructor.
      */
     public DonkyPlugin() {
     }
+
+    /**
+     * Gets the application context from cordova's main activity.
+     * @return the application context
+     */
+    private Context getApplicationContext() {
+        return this.cordova.getActivity().getApplicationContext();
+    }
+
 
     /**
      * Sets the context of the Command. This can then be used to do things like
@@ -25,7 +39,37 @@ public class DonkyPlugin extends CordovaPlugin {
      */
     public void initialize(CordovaInterface cordova, CordovaWebView webView) {
         super.initialize(cordova, webView);
+        gForeground = true;        
     }
+
+
+    @Override
+    public void onPause(boolean multitasking) {
+        super.onPause(multitasking);
+        gForeground = false;
+    }
+
+    @Override
+    public void onResume(boolean multitasking) {
+        super.onResume(multitasking);
+        gForeground = true;
+    }
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        gForeground = false;
+        gWebView = null;
+    }
+    
+    public static boolean isInForeground() {
+      return gForeground;
+    }
+
+    public static boolean isActive() {
+        return gWebView != null;
+    }
+    
 
 
     /**
@@ -36,7 +80,12 @@ public class DonkyPlugin extends CordovaPlugin {
      * @param callbackContext   The callback id used when calling back into JavaScript.
      * @return                  True if the action was valid, false if not.
      */    
+    @Override
     public boolean execute(String action, JSONArray data, CallbackContext callbackContext) throws JSONException {
+
+        Log.v(LOG_TAG, "execute: action=" + action);
+        gWebView = this.webView;
+
 
         if (action.equals("getPlatformInfo")) {
             
