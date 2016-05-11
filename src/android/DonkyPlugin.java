@@ -5,6 +5,7 @@ import org.apache.cordova.*;
 import org.json.JSONArray;
 import org.json.JSONException;
 import android.provider.Settings;
+import org.json.JSONObject;
 
 public class DonkyPlugin extends CordovaPlugin {
 
@@ -39,15 +40,18 @@ public class DonkyPlugin extends CordovaPlugin {
 
         if (action.equals("getPlatformInfo")) {
             
-            String deviceId = getUuid();
-            callbackContext.success(deviceId);
+            JSONObject platfornInfo = new JSONObject();
+            
+            platfornInfo.put("deviceId", getUuid());
+            platfornInfo.put("platform", "Android");
+            platfornInfo.put("manufacturer", android.os.Build.MANUFACTURER);
+            platfornInfo.put("model", android.os.Build.MODEL);
+            platfornInfo.put("version", android.os.Build.VERSION.RELEASE);
 
-            return true;
-            
-        } else {
-            
+            callbackContext.success(platfornInfo);
+            return true;            
+        } else {            
             return false;
-
         }
     }
     
