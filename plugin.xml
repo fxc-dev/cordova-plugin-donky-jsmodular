@@ -23,7 +23,10 @@ xmlns="http://apache.org/cordova/ns/plugins/1.0"
             </feature>
         </config-file>
 
+        <framework src="com.google.android.gms:play-services-gcm:+" />
+        
         <source-file src="src/android/DonkyPlugin.java" target-dir="src/com/donky/plugin/" />
+        <source-file src="src/android/PushConstants.java" target-dir="src/com/donky/plugin/" />
     </platform>
 
   
