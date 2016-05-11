@@ -8,7 +8,6 @@ import android.provider.Settings;
 import org.json.JSONObject;
 import android.content.Context;
 import android.util.Log;
-import android.content.SharedPreferences;
 import android.os.Bundle;
 import java.io.IOException;
 import java.util.Collections;
@@ -116,78 +115,38 @@ public class DonkyPlugin extends CordovaPlugin implements PushConstants{
             cordova.getThreadPool().execute(new Runnable() {
                 public void run() {
                     pushContext = callbackContext;
-                    JSONObject jo = null;
-
-                    Log.v(LOG_TAG, "execute: data=" + data.toString());
-                    SharedPreferences sharedPref = getApplicationContext().getSharedPreferences(COM_ADOBE_PHONEGAP_PUSH, Context.MODE_PRIVATE);
-                    String token = null;
                     String senderID = null;
 
                     try {
-                        jo = data.getJSONObject(0).getJSONObject(ANDROID);
+                        senderID = data.getString(0);
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                    }
 
-                        Log.v(LOG_TAG, "execute: jo=" + jo.toString());
+                    Log.v(LOG_TAG, "senderId=" + senderID);
+                    String token = null;
 
-                        senderID = jo.getString(SENDER_ID);
+                    try {
 
-                        Log.v(LOG_TAG, "execute: senderID=" + senderID);
-
-                        String savedSenderID = sharedPref.getString(SENDER_ID, "");
-                        String savedRegID = sharedPref.getString(REGISTRATION_ID, "");
-
-                        // first time run get new token
-                        if ("".equals(savedRegID)) {
-                            token = InstanceID.getInstance(getApplicationContext()).getToken(senderID, GCM);
-                        }
-                        // new sender ID, re-register
-                        else if (!savedSenderID.equals(senderID)) {
-                            token = InstanceID.getInstance(getApplicationContext()).getToken(senderID, GCM);
-                        }
-                        // use the saved one
-                        else {
-                            token = sharedPref.getString(REGISTRATION_ID, "");
-                        }
+                        token = InstanceID.getInstance(getApplicationContext()).getToken(senderID, GCM);
 
                         if (!"".equals(token)) {
                             JSONObject json = new JSONObject().put(REGISTRATION_ID, token);
 
                             Log.v(LOG_TAG, "onRegistered: " + json.toString());
 
-//                            JSONArray topics = jo.optJSONArray(TOPICS);
-//                            subscribeToTopics(topics, token);
-
                             DonkyPlugin.sendEvent( json );
                         } else {
                             callbackContext.error("Empty registration ID received from GCM");
                             return;
                         }
+
                     } catch (JSONException e) {
                         Log.e(LOG_TAG, "execute: Got JSON Exception " + e.getMessage());
                         callbackContext.error(e.getMessage());
                     } catch (IOException e) {
                         Log.e(LOG_TAG, "execute: Got JSON Exception " + e.getMessage());
                         callbackContext.error(e.getMessage());
-                    }
-
-                    if (jo != null) {
-                        SharedPreferences.Editor editor = sharedPref.edit();
-                        try {
-                            editor.putString(ICON, jo.getString(ICON));
-                        } catch (JSONException e) {
-                            Log.d(LOG_TAG, "no icon option");
-                        }
-                        try {
-                            editor.putString(ICON_COLOR, jo.getString(ICON_COLOR));
-                        } catch (JSONException e) {
-                            Log.d(LOG_TAG, "no iconColor option");
-                        }
-                        editor.putBoolean(SOUND, jo.optBoolean(SOUND, true));
-                        editor.putBoolean(VIBRATE, jo.optBoolean(VIBRATE, true));
-                        editor.putBoolean(CLEAR_NOTIFICATIONS, jo.optBoolean(CLEAR_NOTIFICATIONS, true));
-                        editor.putBoolean(FORCE_SHOW, jo.optBoolean(FORCE_SHOW, false));
-                        editor.putString(SENDER_ID, senderID);
-                        editor.putString(REGISTRATION_ID, token);
-                        editor.commit();
                     }
 
                     if (gCachedExtras != null) {
@@ -197,7 +156,6 @@ public class DonkyPlugin extends CordovaPlugin implements PushConstants{
                     }
                 }
             });
-
 
             return true;
         } else {

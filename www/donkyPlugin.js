@@ -219,14 +219,18 @@ function DonkyPlugin(){
                     
                     queueAppLaunch();                 
                     
-                    var buttonSets = donkyCore.getiOSButtonCategories();                                                            
+                    // TODO: only pass buttonsets to iOS
+                    // TODO: where to get senderId from ?
+                    //      - could pass in some extra stuff in donky initialised and get out of there 
+                    //      - will hardcode for now ;-)
+                    //      - could get out of localStorage ?
 
                     self.registerForPush(function(result){
                         pluginLog("registerForPush succeeded");
                     }, function(error){
                         pluginLog("registerForPush failed");
                     },
-                    buttonSets);
+                    self.platform === "iOS" ? donkyCore.getiOSButtonCategories() : "1026594559972");
                 });
                 
                /**
