@@ -94,7 +94,7 @@ static char coldstartKey;
     
     UIApplication *application = notification.object;
     
-    DonkyPlugin *donkyPlugin = [self getCommandInstance:@"DonkyPlugin"];
+    DonkyPlugin *donkyPlugin = [self getCommandInstance:@"donky"];
     
     if (self.launchNotification) {
         donkyPlugin.coldstart = [self.coldstart boolValue];
@@ -106,6 +106,7 @@ static char coldstartKey;
 
     NSLog(@"AppDelegate(donky)::didRegisterForRemoteNotificationsWithDeviceToken");
 
+#if 0
     NSMutableString *hexString = nil;
     if (deviceToken) {
         const unsigned char *dataBuffer = (const unsigned char *) [deviceToken bytes];
@@ -120,6 +121,11 @@ static char coldstartKey;
 
     NSDictionary *dict = [[NSDictionary alloc] initWithObjectsAndKeys: hexString, @"deviceToken", nil];
     [DonkyPlugin notify: @"pushRegistrationSucceeded" withData: dict];
+#endif    
+    
+    DonkyPlugin *donkyPlugin = [self getCommandInstance:@"donky"];
+    [donkyPlugin didRegisterForRemoteNotificationsWithDeviceToken:deviceToken];
+    
 }
 
 - (void)application:(UIApplication *)application didFailToRegisterForRemoteNotificationsWithError:(NSError *)error {
@@ -174,7 +180,7 @@ static char coldstartKey;
     }
     
     // get instance of the plugin and let it handle the userActivity object
-    DonkyPlugin *donkyPlugin = [self getCommandInstance:@"DonkyPlugin"];
+    DonkyPlugin *donkyPlugin = [self getCommandInstance:@"donky"];
     
     if (donkyPlugin == nil) {
         return NO;

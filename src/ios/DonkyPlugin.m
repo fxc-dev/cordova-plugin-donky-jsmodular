@@ -20,6 +20,7 @@ static NSString *const DNDeviceID = @"DeviceID";
 
 @implementation DonkyPlugin
 
+@synthesize callbackId;
 static UIWebView* webView;
 
 #if _SWIZZLED_INIT_
@@ -107,6 +108,8 @@ static UIWebView* webView;
 {    
     NSLog(@"Donky::registerForPush");
     
+    self.callbackId = command.callbackId;
+    
     BOOL error = FALSE;
     NSString *errorMessage = nil;
         
@@ -157,9 +160,35 @@ static UIWebView* webView;
     
     NSLog(@"error = %d", error);
     
-    CDVPluginResult* result = [CDVPluginResult resultWithStatus: !error ? CDVCommandStatus_OK : CDVCommandStatus_ERROR messageAsString:errorMessage];
+    // CDVPluginResult* result = [CDVPluginResult resultWithStatus: !error ? CDVCommandStatus_OK : CDVCommandStatus_ERROR messageAsString:errorMessage];
+    // [self.commandDelegate sendPluginResult:result callbackId:command.callbackId];
+}
 
-    [self.commandDelegate sendPluginResult:result callbackId:command.callbackId];
+
+- (void)didRegisterForRemoteNotificationsWithDeviceToken:(NSData *)deviceToken {
+    if (self.callbackId == nil) {
+        NSLog(@"Unexpected call to didRegisterForRemoteNotificationsWithDeviceToken, ignoring: %@", deviceToken);
+        return;
+    }
+    NSLog(@"Push Plugin register success: %@", deviceToken);
+    
+    NSMutableString *hexString = nil;
+    if (deviceToken) {
+        const unsigned char *dataBuffer = (const unsigned char *) [deviceToken bytes];
+        
+        NSUInteger dataLength = [deviceToken length];
+        hexString = [NSMutableString stringWithCapacity:(dataLength * 2)];
+        
+        for (int i = 0; i < dataLength; ++i) {
+            [hexString appendString:[NSString stringWithFormat:@"%02lx", (unsigned long) dataBuffer[i]]];
+        }
+    }
+
+    NSDictionary *message = [[NSDictionary alloc] initWithObjectsAndKeys: hexString, @"deviceToken", nil];
+    
+    CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:message];
+    [pluginResult setKeepCallbackAsBool:YES];
+    [self.commandDelegate sendPluginResult:pluginResult callbackId:self.callbackId];
 }
 
 - (void) setBadgeCount:(CDVInvokedUrlCommand*)command; 

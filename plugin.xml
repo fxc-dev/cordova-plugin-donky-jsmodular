@@ -17,11 +17,23 @@ xmlns="http://apache.org/cordova/ns/plugins/1.0"
 
     <!-- android -->
     <platform name="android">
+
         <config-file target="res/xml/config.xml" parent="/*">
             <feature name="donky" >
                 <param name="android-package" value="com.donky.plugin.DonkyPlugin"/>
             </feature>
         </config-file>
+
+        <config-file target="AndroidManifest.xml" parent="/manifest">
+          <uses-permission android:name="android.permission.INTERNET" />
+          <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+          <uses-permission android:name="android.permission.WAKE_LOCK" />
+          <uses-permission android:name="android.permission.VIBRATE"/>
+          <uses-permission android:name="com.google.android.c2dm.permission.RECEIVE" />
+          <permission android:name="${applicationId}.permission.C2D_MESSAGE" android:protectionLevel="signature" />
+          <uses-permission android:name="${applicationId}.permission.C2D_MESSAGE" />
+        </config-file>
+
 
         <framework src="com.google.android.gms:play-services-gcm:+" />
         

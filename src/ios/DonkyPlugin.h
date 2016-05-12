@@ -5,10 +5,14 @@
 
 @interface DonkyPlugin : CDVPlugin
 
+@property (nonatomic, copy) NSString *callbackId;
+
 - (void) getPlatformInfo:(CDVInvokedUrlCommand*)command;
 - (void) registerForPush:(CDVInvokedUrlCommand*)command;
 - (void) setBadgeCount:(CDVInvokedUrlCommand*)command; 
 - (void) openDeepLink:(CDVInvokedUrlCommand*)command;
+
+- (void)didRegisterForRemoteNotificationsWithDeviceToken:(NSData *)deviceToken;
 
 + (void) notify:(NSString *)event withData:(NSDictionary *)data;
 

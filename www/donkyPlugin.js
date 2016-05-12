@@ -226,11 +226,11 @@ function DonkyPlugin(){
                     //      - could get out of localStorage ?
 
                     self.registerForPush(function(result){
-                        pluginLog("registerForPush succeeded");
+                        pluginLog("registerForPush succeeded: " + JSON.stringify(result));
                     }, function(error){
-                        pluginLog("registerForPush failed");
+                        pluginLog("registerForPush failed" + JSON.stringify(error));
                     },
-                    self.platform === "iOS" ? donkyCore.getiOSButtonCategories() : "1026594559972");
+                    self.platform === "iOS" ? JSON.stringify(donkyCore.getiOSButtonCategories()) : "793570521924");
                 });
                 
                /**
@@ -282,8 +282,7 @@ function DonkyPlugin(){
  * @param  {String} eventName - the name of the event
  * @param  {Object} eventData - the object data associated with the event
  */
-DonkyPlugin.prototype.callback = function(eventName, eventData){
-                
+DonkyPlugin.prototype.callback = function(eventName, eventData){                
     if(window.donkyCore){
         donkyCore.publishLocalEvent({ type: eventName, data: eventData });
     }                   
@@ -302,10 +301,10 @@ DonkyPlugin.prototype.getPlatformInfo = function(successCallback, errorCallback)
  * Method to register for push notifications
  * @param {Callback} successCallback - callback to call if method was succsful with the deviceId
  * @param {Callback} errorCallback - callback to call if method failed with the error messag
- * @param {Object[]} buttonSets - buttonset details from donky config
+ * @param {String} arg1 - stringified buttonset details from donky config if ios or senderId if Android
  */
-DonkyPlugin.prototype.registerForPush = function(successCallback, errorCallback, buttonSets){
-    cordova.exec(successCallback, errorCallback, "donky", "registerForPush",[JSON.stringify(buttonSets)]);        
+DonkyPlugin.prototype.registerForPush = function(successCallback, errorCallback, arg1){
+    cordova.exec(successCallback, errorCallback, "donky", "registerForPush",[arg1]);        
 }
 
 /**
