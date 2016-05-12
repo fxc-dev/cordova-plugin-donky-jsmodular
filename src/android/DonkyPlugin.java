@@ -13,6 +13,10 @@ import java.io.IOException;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.Date;
+import java.util.TimeZone;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 
 import com.google.android.gms.iid.InstanceID;
 
@@ -107,6 +111,14 @@ public class DonkyPlugin extends CordovaPlugin implements PushConstants{
             platfornInfo.put("model", android.os.Build.MODEL);
             platfornInfo.put("version", android.os.Build.VERSION.RELEASE);
 
+
+            TimeZone tz = TimeZone.getTimeZone("UTC");
+            DateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mmZ");
+            df.setTimeZone(tz);
+            String nowAsISO = df.format(new Date());
+
+            platfornInfo.put("launchTimeUtc", nowAsISO);
+
             callbackContext.success(platfornInfo);
             return true;
         }
@@ -131,13 +143,13 @@ public class DonkyPlugin extends CordovaPlugin implements PushConstants{
                         token = InstanceID.getInstance(getApplicationContext()).getToken(senderID, GCM);
 
                         if (!"".equals(token)) {
-                            JSONObject json = new JSONObject().put(REGISTRATION_ID, token);
+                            JSONObject json = new JSONObject().put(DEVICE_TOKEN, token);
 
                             Log.v(LOG_TAG, "onRegistered: " + json.toString());
 
                             DonkyPlugin.sendEvent( json );
                         } else {
-                            callbackContext.error("Empty registration ID received from GCM");
+                            callbackContext.error("Empty device Tokem received from GCM");
                             return;
                         }
 

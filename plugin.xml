@@ -34,11 +34,21 @@ xmlns="http://apache.org/cordova/ns/plugins/1.0"
           <uses-permission android:name="${applicationId}.permission.C2D_MESSAGE" />
         </config-file>
 
+        <config-file target="AndroidManifest.xml" parent="/manifest/application">
+            <service
+                android:name="com.donky.plugin.GCMIntentService"
+                android:exported="false" >
+                <intent-filter>
+                    <action android:name="com.google.android.c2dm.intent.RECEIVE" />
+                </intent-filter>
+            </service>
+        </config-file>
 
         <framework src="com.google.android.gms:play-services-gcm:+" />
         
         <source-file src="src/android/DonkyPlugin.java" target-dir="src/com/donky/plugin/" />
         <source-file src="src/android/PushConstants.java" target-dir="src/com/donky/plugin/" />
+        <source-file src="src/android/GCMIntentService.java" target-dir="src/com/donky/plugin/" />
     </platform>
 
   

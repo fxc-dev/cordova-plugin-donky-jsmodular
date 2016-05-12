@@ -26,6 +26,27 @@ function DonkyPlugin(){
 
     var self = this;
 
+    function sendPushConfiguration(result){
+        
+        pluginLog("sendPushConfiguration", JSON.stringify(result, null, 4));
+
+        var pushConfigurationRequest = {
+            registrationId : result.deviceToken
+        };
+
+        if(self.platform === "iOS"){
+            pushConfigurationRequest.bundleId = self.bundleId;
+        }
+
+        pluginLog("pushConfigurationRequest", JSON.stringify(pushConfigurationRequest, null, 4));
+
+        donkyCore.donkyAccount.sendPushConfiguration(pushConfigurationRequest, function(result){            
+            pluginLog("sendPushConfiguration result: ", JSON.stringify(result, null, 4));
+        });
+        
+    }
+
+
     function syncBadgeCount(){
         // set badge count 
         
@@ -153,30 +174,6 @@ function DonkyPlugin(){
                     
                 });                            
                 
-                /**
-                 * We have a device token now which needs to be sent to donky
-                 */
-                donkyCore.subscribeToLocalEvent("pushRegistrationSucceeded", function (event) {
-                    pluginLog("pushRegistrationSucceeded", JSON.stringify(event.data.deviceToken, null, 4));
-
-                    var pushConfigurationRequest = {
-                        registrationId: event.data.deviceToken,
-                        bundleId: window.cordova.plugins.donkyPlugin.bundleId
-                    };
-
-                    pluginLog("pushConfigurationRequest", JSON.stringify(pushConfigurationRequest, null, 4));
-
-                    donkyCore.donkyAccount.sendPushConfiguration(pushConfigurationRequest, function(result){
-                        
-                        pluginLog("sendPushConfiguration result: ", JSON.stringify(result, null, 4));
-                    });
-                                                                                                                           
-                }, false);
-
-                donkyCore.subscribeToLocalEvent("pushRegistrationFailed", function (event) {
-                    pluginLog("pushRegistrationFailed", JSON.stringify(event.data.error, null, 4));                        
-                }, false);
-                          
 
                 /**
                  * FUnction to quere an AppSession notification
@@ -210,8 +207,7 @@ function DonkyPlugin(){
 
                     donkyCore.queueClientNotifications(launchClientNotification);                    
                 }          
-                          
-                                
+                                                          
                 // This event is ALWAYS published on succesful initialisation - hook into it and run our analysis ...
                 donkyCore.subscribeToLocalEvent("DonkyInitialised", function(event) {
 
@@ -219,7 +215,6 @@ function DonkyPlugin(){
                     
                     queueAppLaunch();                 
                     
-                    // TODO: only pass buttonsets to iOS
                     // TODO: where to get senderId from ?
                     //      - could pass in some extra stuff in donky initialised and get out of there 
                     //      - will hardcode for now ;-)
@@ -227,6 +222,9 @@ function DonkyPlugin(){
 
                     self.registerForPush(function(result){
                         pluginLog("registerForPush succeeded: " + JSON.stringify(result));
+                        
+                        sendPushConfiguration(result);
+                                                
                     }, function(error){
                         pluginLog("registerForPush failed" + JSON.stringify(error));
                     },
@@ -326,8 +324,6 @@ DonkyPlugin.prototype.setBadgeCount = function(successCallback, errorCallback, c
 DonkyPlugin.prototype.openDeepLink = function(successCallback, errorCallback, link){
     cordova.exec(successCallback, errorCallback, "donky", "openDeepLink", [link]);        
 }
-
-
 
 module.exports = new DonkyPlugin();
 
