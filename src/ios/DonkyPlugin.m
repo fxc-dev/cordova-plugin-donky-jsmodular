@@ -164,6 +164,16 @@ static UIWebView* webView;
     // [self.commandDelegate sendPluginResult:result callbackId:command.callbackId];
 }
 
+- (void) unregisterForPush:(CDVInvokedUrlCommand*)command
+{
+    self.callbackId = command.callbackId;
+
+    [[UIApplication sharedApplication] unregisterForRemoteNotifications];
+    
+    CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:@"unregistered"];
+
+    [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];    
+}
 
 - (void)didRegisterForRemoteNotificationsWithDeviceToken:(NSData *)deviceToken {
     if (self.callbackId == nil) {

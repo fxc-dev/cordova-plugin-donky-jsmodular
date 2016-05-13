@@ -9,6 +9,7 @@
 
 - (void) getPlatformInfo:(CDVInvokedUrlCommand*)command;
 - (void) registerForPush:(CDVInvokedUrlCommand*)command;
+- (void) unregisterForPush:(CDVInvokedUrlCommand*)command;
 - (void) setBadgeCount:(CDVInvokedUrlCommand*)command; 
 - (void) openDeepLink:(CDVInvokedUrlCommand*)command;
 

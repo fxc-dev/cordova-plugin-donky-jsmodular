@@ -26,27 +26,6 @@ function DonkyPlugin(){
 
     var self = this;
 
-    function sendPushConfiguration(result){
-        
-        pluginLog("sendPushConfiguration", JSON.stringify(result, null, 4));
-
-        var pushConfigurationRequest = {
-            registrationId : result.deviceToken
-        };
-
-        if(self.platform === "iOS"){
-            pushConfigurationRequest.bundleId = self.bundleId;
-        }
-
-        pluginLog("pushConfigurationRequest", JSON.stringify(pushConfigurationRequest, null, 4));
-
-        donkyCore.donkyAccount.sendPushConfiguration(pushConfigurationRequest, function(result){            
-            pluginLog("sendPushConfiguration result: ", JSON.stringify(result, null, 4));
-        });
-        
-    }
-
-
     function syncBadgeCount(){
         // set badge count 
         
@@ -213,7 +192,9 @@ function DonkyPlugin(){
 
                     pluginLog("DonkyInitialised event received in DonkyPlugin()");   
                     
-                    queueAppLaunch();                 
+                    queueAppLaunch();
+                    
+                    var isPushEnabled = donkyCore.donkyAccount.isPushEnabled();
                     
                     // TODO: where to get senderId from ?
                     //      - could pass in some extra stuff in donky initialised and get out of there 
@@ -223,12 +204,31 @@ function DonkyPlugin(){
                     self.registerForPush(function(result){
                         pluginLog("registerForPush succeeded: " + JSON.stringify(result));
                         
-                        sendPushConfiguration(result);
+                        var pushConfig = {
+                            registrationId : result.deviceToken,
+                            // will be undefined on Android
+                            bundleId : self.bundleId
+                        }
+                                                
+                        // always query and store this token
+                        donkyCore.donkyData.set("pushConfig", pushConfig); 
+                        
+                        // ONLY do this if enabled or null
+                        // integrator can control this with donkyCore.donkyAccount.enablePush()
+                        if(donkyCore.donkyAccount.isPushEnabled() !== false){
+                            
+                            pluginLog("sendPushConfiguration", JSON.stringify(pushConfig, null, 4));
+
+                            donkyCore.donkyAccount.sendPushConfiguration(pushConfig, function(result){            
+                                pluginLog("sendPushConfiguration result: ", JSON.stringify(result, null, 4));
+                            });                                    
+                        }
                                                 
                     }, function(error){
                         pluginLog("registerForPush failed" + JSON.stringify(error));
                     },
                     self.platform === "iOS" ? JSON.stringify(donkyCore.getiOSButtonCategories()) : "793570521924");
+                                            
                 });
                 
                /**
@@ -247,7 +247,7 @@ function DonkyPlugin(){
                     self.launchTimeUtc = new Date().toISOString();
 
                     setTimeout(function(){
-                        queueAppLaunch();                    
+                        queueAppLaunch();
                     },1000);
                                         
                 });        
@@ -304,6 +304,17 @@ DonkyPlugin.prototype.getPlatformInfo = function(successCallback, errorCallback)
 DonkyPlugin.prototype.registerForPush = function(successCallback, errorCallback, arg1){
     cordova.exec(successCallback, errorCallback, "donky", "registerForPush",[arg1]);        
 }
+
+/**
+ * Method to register for push notifications
+ * @param {Callback} successCallback - callback to call if method was succsful with the deviceId
+ * @param {Callback} errorCallback - callback to call if method failed with the error messag
+ * @param {String} arg1 - stringified buttonset details from donky config if ios or senderId if Android
+ */
+DonkyPlugin.prototype.unregisterForPush = function(successCallback, errorCallback){
+    cordova.exec(successCallback, errorCallback, "donky", "unregisterForPush");        
+}
+
 
 /**
  * Method to allow integrator to explicitly set the application badge count
