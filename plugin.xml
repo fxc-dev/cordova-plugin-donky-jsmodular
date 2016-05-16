@@ -35,6 +35,18 @@ xmlns="http://apache.org/cordova/ns/plugins/1.0"
         </config-file>
 
         <config-file target="AndroidManifest.xml" parent="/manifest/application">
+
+            <receiver
+                android:name="com.google.android.gms.gcm.GcmReceiver"
+                android:exported="true"
+                android:permission="com.google.android.c2dm.permission.SEND" >
+                <intent-filter>
+                    <action android:name="com.google.android.c2dm.intent.RECEIVE" />
+                    <category android:name="${applicationId}" />
+                </intent-filter>
+            </receiver>
+
+
             <service
                 android:name="com.donky.plugin.GCMIntentService"
                 android:exported="false" >
@@ -42,6 +54,17 @@ xmlns="http://apache.org/cordova/ns/plugins/1.0"
                     <action android:name="com.google.android.c2dm.intent.RECEIVE" />
                 </intent-filter>
             </service>
+
+            <service
+                android:name="com.donky.plugin.PushInstanceIDListenerService"
+                android:exported="false">
+                <intent-filter>
+                    <action android:name="com.google.android.gms.iid.InstanceID"/>
+                </intent-filter>
+            </service>
+
+
+
         </config-file>
 
         <framework src="com.google.android.gms:play-services-gcm:+" />
@@ -49,6 +72,7 @@ xmlns="http://apache.org/cordova/ns/plugins/1.0"
         <source-file src="src/android/DonkyPlugin.java" target-dir="src/com/donky/plugin/" />
         <source-file src="src/android/PushConstants.java" target-dir="src/com/donky/plugin/" />
         <source-file src="src/android/GCMIntentService.java" target-dir="src/com/donky/plugin/" />
+        <source-file src="src/android/PushInstanceIDListenerService.java" target-dir="src/com/donky/plugin/" />
     </platform>
 
   
