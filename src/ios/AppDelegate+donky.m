@@ -149,7 +149,12 @@ static char coldstartKey;
         //TODO: store somewhere that the plugin can access in pluginInitialize - it can then the client
     }
     
-    [DonkyPlugin notify: @"pushNotification" withData: dict];
+    DonkyPlugin *donkyPlugin = [self getCommandInstance:@"donky"];
+    
+    [donkyPlugin notificationReceived: dict];
+    
+    // [DonkyPlugin notify: @"pushNotification" withData: dict];
+    
     completionHandler(UIBackgroundFetchResultNewData);
 }
 

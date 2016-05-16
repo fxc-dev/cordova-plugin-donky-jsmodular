@@ -12,6 +12,7 @@
 - (void) unregisterForPush:(CDVInvokedUrlCommand*)command;
 - (void) setBadgeCount:(CDVInvokedUrlCommand*)command; 
 - (void) openDeepLink:(CDVInvokedUrlCommand*)command;
+- (void)notificationReceived:(NSDictionary *)notificationMessage;
 
 - (void)didRegisterForRemoteNotificationsWithDeviceToken:(NSData *)deviceToken;
 

@@ -203,26 +203,41 @@ function DonkyPlugin(){
 
                     self.registerForPush(function(result){
                         pluginLog("registerForPush succeeded: " + JSON.stringify(result));
-                        
-                        var pushConfig = {
-                            registrationId : result.deviceToken,
-                            // will be undefined on Android
-                            bundleId : self.bundleId
-                        }
-                                                
-                        // always query and store this token
-                        donkyCore.donkyData.set("pushConfig", pushConfig); 
-                        
-                        // ONLY do this if enabled or null
-                        // integrator can control this with donkyCore.donkyAccount.enablePush()
-                        if(donkyCore.donkyAccount.isPushEnabled() !== false){
-                            
-                            pluginLog("sendPushConfiguration", JSON.stringify(pushConfig, null, 4));
 
-                            donkyCore.donkyAccount.sendPushConfiguration(pushConfig, function(result){            
-                                pluginLog("sendPushConfiguration result: ", JSON.stringify(result, null, 4));
-                            });                                    
+                        // success callback re-used for push notifications (ANDROID)                        
+                        if(result.deviceToken){
+                            
+                            var pushConfig = {
+                                registrationId : result.deviceToken,
+                                // will be undefined on Android
+                                bundleId : self.bundleId
+                            }
+                                                    
+                            // always query and store this token
+                            donkyCore.donkyData.set("pushConfig", pushConfig); 
+                            
+                            // ONLY do this if enabled or null
+                            // integrator can control this with donkyCore.donkyAccount.enablePush()
+                            if(donkyCore.donkyAccount.isPushEnabled() !== false){
+                                
+                                pluginLog("sendPushConfiguration", JSON.stringify(pushConfig, null, 4));
+
+                                donkyCore.donkyAccount.sendPushConfiguration(pushConfig, function(result){            
+                                    pluginLog("sendPushConfiguration result: ", JSON.stringify(result, null, 4));
+                                });                                    
+                            }
+                        }else{
+                            pluginLog("registerForPush success callback:", JSON.stringify(result, null, 4));
+                            // TODO: build a platform agnostic object containing the notificationId and the app state  
+                            
+                            
+                            // it is an android push
+                            var notificationId = result.additionalData.notificationId;
+                            // donkyCore.publishLocalEvent({ type: eventName, data: notificationId });
+                            
+                            // TODO: raise a local event ...
                         }
+                        
                                                 
                     }, function(error){
                         pluginLog("registerForPush failed" + JSON.stringify(error));
@@ -281,8 +296,8 @@ function DonkyPlugin(){
  * @param  {Object} eventData - the object data associated with the event
  */
 DonkyPlugin.prototype.callback = function(eventName, eventData){                
-    if(window.donkyCore){
-        donkyCore.publishLocalEvent({ type: eventName, data: eventData });
+    if(window.donkyCore){        
+        donkyCore.publishLocalEvent({ type: eventName, data: eventData });            
     }                   
 }
 

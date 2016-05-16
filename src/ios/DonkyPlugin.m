@@ -235,6 +235,16 @@ static UIWebView* webView;
 }
 
 
+- (void)notificationReceived:(NSDictionary *)notificationMessage;
+{
+    NSLog(@"Notification received: %@", notificationMessage);
+    
+    // send notification message
+    CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:notificationMessage];
+    [pluginResult setKeepCallbackAsBool:YES];
+    [self.commandDelegate sendPluginResult:pluginResult callbackId:self.callbackId];
+}
+
 + (void) executeJavascript:(NSString *)jsString{
 
     if ([webView respondsToSelector:@selector(stringByEvaluatingJavaScriptFromString:)]) {
