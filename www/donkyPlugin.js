@@ -81,7 +81,7 @@ function DonkyPlugin(){
                  */
                 donkyCore.subscribeToLocalEvent("pushNotification", function (event) {
                     pluginLog("pushNotification: " + JSON.stringify(event.data, null, 4));
-                    var notificationId = event.data.userInfo.notificationId;
+                    var notificationId = event.data.notificationId;
                     
                     if(self.applicationStateOnPush === undefined){
                         self.applicationStateOnPush = event.data.applicationState;                    
@@ -200,11 +200,14 @@ function DonkyPlugin(){
                     //      - could pass in some extra stuff in donky initialised and get out of there 
                     //      - will hardcode for now ;-)
                     //      - could get out of localStorage ?
+                    // TODO: 
+                    //      - rename to init ?
 
                     self.registerForPush(function(result){
-                        pluginLog("registerForPush succeeded: " + JSON.stringify(result));
+                        pluginLog("registerForPush success callback: " + JSON.stringify(result));
 
-                        // success callback re-used for push notifications (ANDROID)                        
+                        // success callback re-used for push notifications and returning device token
+                                                 
                         if(result.deviceToken){
                             
                             var pushConfig = {
@@ -227,15 +230,28 @@ function DonkyPlugin(){
                                 });                                    
                             }
                         }else{
-                            pluginLog("registerForPush success callback:", JSON.stringify(result, null, 4));
-                            // TODO: build a platform agnostic object containing the notificationId and the app state  
                             
+                            var notification = {}; 
                             
-                            // it is an android push
-                            var notificationId = result.additionalData.notificationId;
-                            // donkyCore.publishLocalEvent({ type: eventName, data: notificationId });
+                            switch( self.platform ){
+                                case "iOS":
+                                {
+                                    notification.notificationId = result.userInfo.notificationId;
+                                    notification.applicationState = result.applicationState;
+                                }
+                                break;
+                                
+                                case "Android":
+                                {
+                                    notification.notificationId = result.additionalData.notificationId;
+                                    // TODO: implement this for android ...
+                                    notification.applicationState = AppStates.active;
+                                }
+                                break;
+                            } 
                             
-                            // TODO: raise a local event ...
+                            donkyCore.publishLocalEvent({ type: "pushNotification", data: notification });
+                            
                         }
                         
                                                 
