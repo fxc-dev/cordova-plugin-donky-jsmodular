@@ -89,20 +89,28 @@ function DonkyPlugin(){
                                                                                                    
                     donkyCore.donkyNetwork.getServerNotification(notificationId, function(notification){
                         if(notification){
-                            // Haver we already processed this ? doubt it ....
-                            if(!donkyCore.findNotificationInRecentCache(notification.id)){
-                                
-                                // need to handle the case when a push message has been received when the app was not active (and noty display it again)                                                                              
-                                if( notification.type === "SimplePushMessage" && event.data.applicationState !== AppStates.active){
-                                    donkyCore.addNotificationToRecentCache(notification.id);
-                                }else{
-                                    donkyCore._processServerNotifications([notification]);    
+                            
+                            if(false){
+                                cordova.exec(function(){}, function(){}, "donky", "displayNotification", ["test message"]);
+                            }else{
+                                // Haver we already processed this ? doubt it ....
+                                if(!donkyCore.findNotificationInRecentCache(notification.id)){
+                                    
+                                    // need to handle the case when a push message has been received when the app was not active (and noty display it again)                                                                              
+                                    if( notification.type === "SimplePushMessage" && event.data.applicationState !== AppStates.active){
+                                        donkyCore.addNotificationToRecentCache(notification.id);
+                                    }else{
+                                        donkyCore._processServerNotifications([notification]);    
+                                    }
+                                    
+                                    if(notification.type === "SimplePushMessage" || notification.type === "RichMessage"){
+                                        syncBadgeCount();
+                                    }                                                                                          
                                 }
                                 
-                                if(notification.type === "SimplePushMessage" || notification.type === "RichMessage"){
-                                    syncBadgeCount();
-                                }                                                                                          
                             }
+                            
+                            
                         }                                                
                     });
                 });        

@@ -4,9 +4,14 @@ package com.donky.plugin;
 import org.apache.cordova.*;
 import org.json.JSONArray;
 import org.json.JSONException;
+
+import android.app.Notification;
+import android.app.NotificationManager;
+import android.content.res.Resources;
 import android.provider.Settings;
 import org.json.JSONObject;
 import android.content.Context;
+import android.support.v4.app.NotificationCompat;
 import android.util.Log;
 import android.os.Bundle;
 import java.io.IOException;
@@ -14,9 +19,12 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Date;
+import java.util.Random;
 import java.util.TimeZone;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+
+
 
 import com.google.android.gms.iid.InstanceID;
 
@@ -120,6 +128,12 @@ public class DonkyPlugin extends CordovaPlugin implements PushConstants{
             platfornInfo.put("launchTimeUtc", nowAsISO);
 
             callbackContext.success(platfornInfo);
+            return true;
+        }
+        else if(action.equals("displayNotification")){
+            String message = data.getString(0);
+            createNotification(message);
+            callbackContext.success();
             return true;
         }
         else if(action.equals("registerForPush")){
@@ -268,5 +282,47 @@ public class DonkyPlugin extends CordovaPlugin implements PushConstants{
         String uuid = Settings.Secure.getString(this.cordova.getActivity().getContentResolver(), android.provider.Settings.Secure.ANDROID_ID);
         return uuid;
     }
+
+
+    public void createNotification( String message/*Context context, Bundle extras*/) {
+
+        Context context = getApplicationContext();
+
+        NotificationManager mNotificationManager = (NotificationManager) this.cordova.getActivity().getSystemService(Context.NOTIFICATION_SERVICE);
+        String appName = (String) context.getPackageManager().getApplicationLabel(context.getApplicationInfo());
+        String packageName = context.getPackageName();
+        Resources resources = context.getResources();
+
+        NotificationCompat.Builder mBuilder =
+                new NotificationCompat.Builder(context)
+                        .setWhen(System.currentTimeMillis())
+//                        .setContentTitle(extras.getString(TITLE))
+//                        .setTicker(extras.getString(TITLE))
+                        //              .setContentIntent(contentIntent)
+                        .setAutoCancel(true);
+
+        mBuilder.setDefaults(Notification.DEFAULT_VIBRATE);
+
+        mBuilder.setSmallIcon(context.getApplicationInfo().icon);
+
+        mBuilder.setSound(android.provider.Settings.System.DEFAULT_NOTIFICATION_URI);
+
+        mBuilder.setContentText(message);
+
+        mBuilder.setNumber(0);
+
+        /*
+         * Notification add actions
+         */
+
+        // TODO: interactive buttons!!!
+        // createActions(extras, mBuilder, resources, packageName);
+        Random r = new Random();
+        int notId = r.nextInt(100000);
+
+        mNotificationManager.notify(appName, notId, mBuilder.build());
+    }
+
+
     
 }
