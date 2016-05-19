@@ -20,7 +20,7 @@ public class PushHandlerActivity extends Activity implements PushConstants {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         
-        // TODO: what is tyhis for ?
+        // TODO: what is this for ?
         // GCMIntentService gcm = new GCMIntentService();
         // gcm.setNotification(getIntent().getIntExtra(NOT_ID, 0), "");
         

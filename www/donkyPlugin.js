@@ -77,7 +77,7 @@ function DonkyPlugin(){
                 }
 
                 /**
-                 * A new push notification has arrived
+                 *  new push notification has arrived
                  */
                 donkyCore.subscribeToLocalEvent("pushNotification", function (event) {
                     pluginLog("pushNotification: " + JSON.stringify(event.data, null, 4));
@@ -88,32 +88,59 @@ function DonkyPlugin(){
                     }
                                                                                                    
                     donkyCore.donkyNetwork.getServerNotification(notificationId, function(notification){
-                        if(notification){
-                            
-                            if(false){
-                                cordova.exec(function(){}, function(){}, "donky", "displayNotification", ["test message"]);
-                            }else{
-                                // Haver we already processed this ? doubt it ....
-                                if(!donkyCore.findNotificationInRecentCache(notification.id)){
-                                    
-                                    // need to handle the case when a push message has been received when the app was not active (and noty display it again)                                                                              
-                                    if( notification.type === "SimplePushMessage" && event.data.applicationState !== AppStates.active){
-                                        donkyCore.addNotificationToRecentCache(notification.id);
-                                    }else{
-                                        donkyCore._processServerNotifications([notification]);    
-                                    }
-                                    
-                                    if(notification.type === "SimplePushMessage" || notification.type === "RichMessage"){
-                                        syncBadgeCount();
-                                    }                                                                                          
+
+                        if(notification){                            
+                            // Haver we already processed this ? doubt it ....
+                            if(!donkyCore.findNotificationInRecentCache(notification.id)){
+                                
+                                // need to handle the case when a push message has been received when the app was not active (and noty display it again)                                                                              
+                                if( notification.type === "SimplePushMessage" && event.data.applicationState !== AppStates.active){
+                                    donkyCore.addNotificationToRecentCache(notification.id);
+                                }else{
+                                    donkyCore._processServerNotifications([notification]);    
                                 }
+                                
+                                if(notification.type === "SimplePushMessage" || notification.type === "RichMessage"){
+                                    syncBadgeCount();
+                                }                                                                                          
+                            }                            
+                        }                                                
+                    });
+                });      
+                
+                // android push message has nothing in it other than notificationId
+                // get the message here and pass back the info to android native to display a notification
+                // TODO: can we cache this so we don't need to get it again ?
+                donkyCore.subscribeToLocalEvent("getGCMNotification", function (event) {
+                    var notificationId = event.data.notificationId;
+                    
+                    donkyCore.donkyNetwork.getServerNotification(notificationId, function(notification){
+                    
+                        if(notification){
+
+                            var title = "";
+                            var body = "";
+                            
+                            switch(notification.type){
+                                case "RichMessage":
+                                title = "From: " + notification.data.senderDisplayName;
+                                body = notification.data.description;
+                                break;
+
+                                case "SimplePushMessage":
+                                title = "From: " + notification.data.senderDisplayName;
+                                body = notification.data.body;    
+                                // TODO: interactive buttons ...                            
+                                break;
                                 
                             }
                             
-                            
-                        }                                                
-                    });
-                });        
+                            cordova.exec(function(){}, function(){}, "donky", "displayNotification", [title, body, notificationId]);                            
+                        }
+                    });                     
+                    
+                });
+                  
                 
                 /**
                  * 
@@ -237,7 +264,7 @@ function DonkyPlugin(){
                                     pluginLog("sendPushConfiguration result: ", JSON.stringify(result, null, 4));
                                 });                                    
                             }
-                        }else{
+                        }else if(true){
                             
                             var notification = {}; 
                             
@@ -258,6 +285,7 @@ function DonkyPlugin(){
                                 break;
                             } 
                             
+                            // TODO: publish event or just call method ?
                             donkyCore.publishLocalEvent({ type: "pushNotification", data: notification });
                             
                         }

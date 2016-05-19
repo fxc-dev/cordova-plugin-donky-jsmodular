@@ -46,6 +46,7 @@ public class GCMIntentService extends GcmListenerService implements PushConstant
 
             if(DonkyPlugin.isInForeground())
             {
+                // App is open, just send the push to the client to deal with
                 DonkyPlugin.sendExtras(extras);
             }
             else
@@ -56,6 +57,8 @@ public class GCMIntentService extends GcmListenerService implements PushConstant
 
                 // works if app is backgrounded - need to test coldstart scenario robustly ...
 
+
+
                 createNotification(getApplicationContext(), extras);
             }
         }
@@ -63,6 +66,7 @@ public class GCMIntentService extends GcmListenerService implements PushConstant
 
 
     public void createNotification(Context context, Bundle extras) {
+
         NotificationManager mNotificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
         String appName = (String) context.getPackageManager().getApplicationLabel(context.getApplicationInfo());
         String packageName = context.getPackageName();

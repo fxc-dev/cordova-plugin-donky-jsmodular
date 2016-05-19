@@ -7,6 +7,8 @@ import org.json.JSONException;
 
 import android.app.Notification;
 import android.app.NotificationManager;
+import android.app.PendingIntent;
+import android.content.Intent;
 import android.content.res.Resources;
 import android.provider.Settings;
 import org.json.JSONObject;
@@ -98,7 +100,7 @@ public class DonkyPlugin extends CordovaPlugin implements PushConstants{
      * Executes the request and returns PluginResult.
      *
      * @param action            The action to execute.
-     * @param args              JSONArry of arguments for the plugin.
+     * @param data              JSONArry of arguments for the plugin.
      * @param callbackContext   The callback id used when calling back into JavaScript.
      * @return                  True if the action was valid, false if not.
      */    
@@ -131,8 +133,9 @@ public class DonkyPlugin extends CordovaPlugin implements PushConstants{
             return true;
         }
         else if(action.equals("displayNotification")){
-            String message = data.getString(0);
-            createNotification(message);
+            String title = data.getString(0);
+            String message = data.getString(1);
+            createNotification(title, message);
             callbackContext.success();
             return true;
         }
@@ -150,7 +153,7 @@ public class DonkyPlugin extends CordovaPlugin implements PushConstants{
                     }
 
                     Log.v(LOG_TAG, "senderId=" + senderID);
-                    String token = null;
+                    String token;
 
                     try {
 
@@ -284,7 +287,15 @@ public class DonkyPlugin extends CordovaPlugin implements PushConstants{
     }
 
 
-    public void createNotification( String message/*Context context, Bundle extras*/) {
+    /**
+     * Called from JS ...
+     * 1) push comes in
+     *
+     * @param title
+     * @param message
+     */
+
+    public void createNotification( String title, String message/*Context context, Bundle extras*/) {
 
         Context context = getApplicationContext();
 
@@ -293,12 +304,25 @@ public class DonkyPlugin extends CordovaPlugin implements PushConstants{
         String packageName = context.getPackageName();
         Resources resources = context.getResources();
 
+        Random r = new Random();
+        int notId = r.nextInt(100000);
+
+        Intent notificationIntent = new Intent(context, PushHandlerActivity.class);
+
+        notificationIntent.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+        notificationIntent.putExtra(PUSH_BUNDLE, gCachedExtras);
+        notificationIntent.putExtra(NOT_ID, notId);
+
+        int requestCode = new Random().nextInt();
+        PendingIntent contentIntent = PendingIntent.getActivity(getApplicationContext(), requestCode, notificationIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+
+
         NotificationCompat.Builder mBuilder =
                 new NotificationCompat.Builder(context)
                         .setWhen(System.currentTimeMillis())
-//                        .setContentTitle(extras.getString(TITLE))
-//                        .setTicker(extras.getString(TITLE))
-                        //              .setContentIntent(contentIntent)
+                        .setContentTitle(title)
+                        .setTicker(title)
+                        .setContentIntent(contentIntent)
                         .setAutoCancel(true);
 
         mBuilder.setDefaults(Notification.DEFAULT_VIBRATE);
@@ -310,15 +334,6 @@ public class DonkyPlugin extends CordovaPlugin implements PushConstants{
         mBuilder.setContentText(message);
 
         mBuilder.setNumber(0);
-
-        /*
-         * Notification add actions
-         */
-
-        // TODO: interactive buttons!!!
-        // createActions(extras, mBuilder, resources, packageName);
-        Random r = new Random();
-        int notId = r.nextInt(100000);
 
         mNotificationManager.notify(appName, notId, mBuilder.build());
     }
