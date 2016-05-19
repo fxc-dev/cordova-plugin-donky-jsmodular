@@ -18,9 +18,11 @@ import android.util.Log;
 import android.os.Bundle;
 import java.io.IOException;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Date;
+import java.util.Map;
 import java.util.Random;
 import java.util.TimeZone;
 import java.text.DateFormat;
@@ -37,7 +39,12 @@ public class DonkyPlugin extends CordovaPlugin implements PushConstants{
     private static CordovaWebView gWebView;
     private static boolean gForeground = false;
     private static CallbackContext pushContext;
+    // these are used if the push comes in and the webview isnt initialised
     private static Bundle gCachedExtras = null;
+
+        
+    private static Map <String, Bundle> gCachedExtrasMap = new HashMap<String,Bundle>(); 
+
 
     /**
      * Constructor.
@@ -110,7 +117,6 @@ public class DonkyPlugin extends CordovaPlugin implements PushConstants{
         Log.v(LOG_TAG, "execute: action=" + action);
         gWebView = this.webView;
 
-
         if (action.equals("getPlatformInfo")) {
 
             JSONObject platfornInfo = new JSONObject();
@@ -120,7 +126,6 @@ public class DonkyPlugin extends CordovaPlugin implements PushConstants{
             platfornInfo.put("manufacturer", android.os.Build.MANUFACTURER);
             platfornInfo.put("model", android.os.Build.MODEL);
             platfornInfo.put("version", android.os.Build.VERSION.RELEASE);
-
 
             TimeZone tz = TimeZone.getTimeZone("UTC");
             DateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mmZ");
@@ -133,9 +138,13 @@ public class DonkyPlugin extends CordovaPlugin implements PushConstants{
             return true;
         }
         else if(action.equals("displayNotification")){
+            
             String title = data.getString(0);
             String message = data.getString(1);
-            createNotification(title, message);
+            String notificationId = data.getString(2);
+            
+            createNotification(title, message, notificationId);
+            
             callbackContext.success();
             return true;
         }
@@ -193,6 +202,9 @@ public class DonkyPlugin extends CordovaPlugin implements PushConstants{
     }
 
     public static void sendEvent(JSONObject _json) {
+        
+        Log.v(LOG_TAG, "sendEvent(" + _json.toString() + ")");
+        
         PluginResult pluginResult = new PluginResult(PluginResult.Status.OK, _json);
         pluginResult.setKeepCallback(true);
         if (pushContext != null) {
@@ -267,6 +279,10 @@ public class DonkyPlugin extends CordovaPlugin implements PushConstants{
     public static void sendExtras(Bundle extras) {
         if (extras != null) {
             if (gWebView != null) {
+                
+                String notificationId = extras.getString("notificationId");
+                gCachedExtrasMap.put(notificationId, extras);
+                
                 sendEvent(convertBundleToJson(extras));
             } else {
                 Log.v(LOG_TAG, "sendExtras: caching extras to send at a later time.");
@@ -295,7 +311,9 @@ public class DonkyPlugin extends CordovaPlugin implements PushConstants{
      * @param message
      */
 
-    public void createNotification( String title, String message/*Context context, Bundle extras*/) {
+    public void createNotification( String title, String message, String notificationId) {
+
+        Log.v(LOG_TAG, "createNotification(\"" + title + "\", \"" + message + "\", "  + notificationId + ")");
 
         Context context = getApplicationContext();
 
@@ -310,7 +328,7 @@ public class DonkyPlugin extends CordovaPlugin implements PushConstants{
         Intent notificationIntent = new Intent(context, PushHandlerActivity.class);
 
         notificationIntent.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP | Intent.FLAG_ACTIVITY_CLEAR_TOP);
-        notificationIntent.putExtra(PUSH_BUNDLE, gCachedExtras);
+        notificationIntent.putExtra(PUSH_BUNDLE, gCachedExtrasMap.get(notificationId));
         notificationIntent.putExtra(NOT_ID, notId);
 
         int requestCode = new Random().nextInt();

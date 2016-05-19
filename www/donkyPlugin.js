@@ -112,7 +112,7 @@ function DonkyPlugin(){
                 // get the message here and pass back the info to android native to display a notification
                 // TODO: can we cache this so we don't need to get it again ?
                 donkyCore.subscribeToLocalEvent("getGCMNotification", function (event) {
-                    var notificationId = event.data.notificationId;
+                    var notificationId = event.data;
                     
                     donkyCore.donkyNetwork.getServerNotification(notificationId, function(notification){
                     
@@ -264,7 +264,14 @@ function DonkyPlugin(){
                                     pluginLog("sendPushConfiguration result: ", JSON.stringify(result, null, 4));
                                 });                                    
                             }
-                        }else if(true){
+                            
+                        }else if(result.additionalData && 
+                                 // TODO: convertBundleToJson only supports string values ;-(
+                                 result.additionalData.getNotification === "true"){
+                                                        
+                            donkyCore.publishLocalEvent({ type: "getGCMNotification", data: result.additionalData.notificationId });
+                            
+                        }else{
                             
                             var notification = {}; 
                             

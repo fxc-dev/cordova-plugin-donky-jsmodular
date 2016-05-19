@@ -44,23 +44,16 @@ public class GCMIntentService extends GcmListenerService implements PushConstant
                 Log.d(LOG_TAG, "value = " + json);
             }
 
-            if(DonkyPlugin.isInForeground())
-            {
-                // App is open, just send the push to the client to deal with
-                DonkyPlugin.sendExtras(extras);
+            if(!DonkyPlugin.isInForeground()){
+                // tells to the JS plugin to download the notification and pass back the dets ...
+                // TODO: convertBundleToJson only supports string values ;-(
+                extras.putString("getNotification", "true");
             }
-            else
-            {
-                // TODO:
-                // 1) send an event to the JS plugin to download the notification
-                // 2) plugin then calls method passing notification title / body / buttons etc ...
 
-                // works if app is backgrounded - need to test coldstart scenario robustly ...
+            DonkyPlugin.sendExtras(extras);
 
+            // createNotification(getApplicationContext(), extras);
 
-
-                createNotification(getApplicationContext(), extras);
-            }
         }
     }
 

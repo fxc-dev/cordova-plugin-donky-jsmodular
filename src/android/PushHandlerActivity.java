@@ -51,6 +51,9 @@ public class PushHandlerActivity extends Activity implements PushConstants {
             originalExtras.putBoolean(COLDSTART, !isPushPluginActive);
             originalExtras.putString(CALLBACK, extras.getString("callback"));
 
+            // will be in an infinite loop if we don't remove this one ...
+            originalExtras.remove("getNotification");
+
             DonkyPlugin.sendExtras(originalExtras);
         }
     }
