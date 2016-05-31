@@ -111,6 +111,7 @@ function DonkyPlugin(){
                 // android push message has nothing in it other than notificationId
                 // get the message here and pass back the info to android native to display a notification
                 // TODO: can we cache this so we don't need to get it again ?
+                /*
                 donkyCore.subscribeToLocalEvent("getGCMNotification", function (event) {
                     var notificationId = event.data;
                     
@@ -139,7 +140,7 @@ function DonkyPlugin(){
                         }
                     });                     
                     
-                });
+                });*/
                   
                 
                 /**
@@ -265,13 +266,14 @@ function DonkyPlugin(){
                                 });                                    
                             }
                             
-                        }else if(result.additionalData && 
-                                 // TODO: convertBundleToJson only supports string values ;-(
-                                 result.additionalData.getNotification === "true"){
+                        }/*else if(result.additionalData && 
+
+                            // TODO: convertBundleToJson only supports string values ;-(
+                            result.additionalData.getNotification === "true"){
                                                         
                             donkyCore.publishLocalEvent({ type: "getGCMNotification", data: result.additionalData.notificationId });
                             
-                        }else{
+                        }*/else{
                             
                             var notification = {}; 
                             

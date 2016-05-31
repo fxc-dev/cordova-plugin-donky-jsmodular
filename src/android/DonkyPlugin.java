@@ -137,7 +137,7 @@ public class DonkyPlugin extends CordovaPlugin implements PushConstants{
             callbackContext.success(platfornInfo);
             return true;
         }
-        else if(action.equals("displayNotification")){
+        /*else if(action.equals("displayNotification")){
             
             String title = data.getString(0);
             String message = data.getString(1);
@@ -147,7 +147,7 @@ public class DonkyPlugin extends CordovaPlugin implements PushConstants{
             
             callbackContext.success();
             return true;
-        }
+        }*/
         else if(action.equals("registerForPush")){
 
             cordova.getThreadPool().execute(new Runnable() {
@@ -310,7 +310,7 @@ public class DonkyPlugin extends CordovaPlugin implements PushConstants{
      * @param title
      * @param message
      */
-
+     /*
     public void createNotification( String title, String message, String notificationId) {
 
         Log.v(LOG_TAG, "createNotification(\"" + title + "\", \"" + message + "\", "  + notificationId + ")");
@@ -354,7 +354,7 @@ public class DonkyPlugin extends CordovaPlugin implements PushConstants{
         mBuilder.setNumber(0);
 
         mNotificationManager.notify(appName, notId, mBuilder.build());
-    }
+    }*/
 
 
     

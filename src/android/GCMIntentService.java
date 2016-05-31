@@ -2,6 +2,7 @@ package com.donky.plugin;
 
 import android.app.PendingIntent;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.util.Log;
 
@@ -44,26 +45,31 @@ public class GCMIntentService extends GcmListenerService implements PushConstant
                 Log.d(LOG_TAG, "value = " + json);
             }
 
-            if(!DonkyPlugin.isInForeground()){
-                // tells to the JS plugin to download the notification and pass back the dets ...
-                // TODO: convertBundleToJson only supports string values ;-(
-                extras.putString("getNotification", "true");
+            if(DonkyPlugin.isInForeground()){
+
+                DonkyPlugin.sendExtras(extras);
+                    
+            }else{
+                createNotification(getApplicationContext(), extras);
             }
-
-            DonkyPlugin.sendExtras(extras);
-
-            // createNotification(getApplicationContext(), extras);
 
         }
     }
 
+    /**
+     * Forces the main activity to re-launch if it's unloaded.
+     *
+    private void forceMainActivityReload() {
+        PackageManager pm = getPackageManager();
+        Intent launchIntent = pm.getLaunchIntentForPackage(getApplicationContext().getPackageName());
+
+        startActivity(launchIntent);
+    }*/
 
     public void createNotification(Context context, Bundle extras) {
 
         NotificationManager mNotificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
         String appName = (String) context.getPackageManager().getApplicationLabel(context.getApplicationInfo());
-        String packageName = context.getPackageName();
-        Resources resources = context.getResources();
 
         Random r = new Random();
         int notId = r.nextInt(100000);
@@ -76,14 +82,13 @@ public class GCMIntentService extends GcmListenerService implements PushConstant
         int requestCode = new Random().nextInt();
         PendingIntent contentIntent = PendingIntent.getActivity(this, requestCode, notificationIntent, PendingIntent.FLAG_UPDATE_CURRENT);
 
-
         NotificationCompat.Builder mBuilder =
                 new NotificationCompat.Builder(context)
                         .setWhen(System.currentTimeMillis())
                         .setContentTitle(extras.getString(TITLE))
                         .setTicker(extras.getString(TITLE))
-                        .setContentIntent(contentIntent)
-                        .setAutoCancel(true);
+                        .setContentIntent(contentIntent);
+                        //.setAutoCancel(true);
 
         mBuilder.setDefaults(Notification.DEFAULT_VIBRATE);
 
@@ -94,13 +99,10 @@ public class GCMIntentService extends GcmListenerService implements PushConstant
         mBuilder.setContentText("TODO: get content text ;-)");
 
         mBuilder.setNumber(0);
-
-        /*
-         * Notification add actions
-         */
-
-        // TODO: interactive buttons!!!
-        // createActions(extras, mBuilder, resources, packageName);
+        
+        mBuilder.addAction(android.R.color.transparent, "Yes", contentIntent);
+        
+        mBuilder.addAction(android.R.color.transparent, "No", contentIntent);
 
         mNotificationManager.notify(appName, notId, mBuilder.build());
     }
