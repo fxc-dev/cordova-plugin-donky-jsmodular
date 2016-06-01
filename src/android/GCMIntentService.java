@@ -3,11 +3,18 @@ package com.donky.plugin;
 import android.app.PendingIntent;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.content.res.AssetManager;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.os.Bundle;
 import android.util.Log;
 
 import com.google.android.gms.gcm.GcmListenerService;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.util.Random;
 
 import android.app.Notification;
@@ -18,32 +25,19 @@ import android.content.res.Resources;
 
 import android.support.v4.app.NotificationCompat;
 
+import org.json.JSONException;
+import org.json.JSONObject;
+
 
 public class GCMIntentService extends GcmListenerService implements PushConstants {
 
     private static final String LOG_TAG = "DonkyPlugin";
 
-/*
-    05-16 09:57:42.841 4056-5446/com.lepojevic.pushtest D/DonkyPlugin: key = type
-    05-16 09:57:56.429 4056-5446/com.lepojevic.pushtest D/DonkyPlugin: value = NOTIFICATIONPENDING
-    05-16 09:59:45.810 4056-5446/com.lepojevic.pushtest D/DonkyPlugin: key = notificationId
-    05-16 09:59:45.810 4056-5446/com.lepojevic.pushtest D/DonkyPlugin: value = f49441f4-87d8-4135-b94c-abd9c9f7f456
-    05-16 09:59:45.811 4056-5446/com.lepojevic.pushtest D/DonkyPlugin: key = notificationType
-    05-16 09:59:45.811 4056-5446/com.lepojevic.pushtest D/DonkyPlugin: value = SIMPLEPUSHMSG
-    05-16 09:59:45.811 4056-5446/com.lepojevic.pushtest D/DonkyPlugin: key = collapse_key
-    05-16 09:59:45.811 4056-5446/com.lepojevic.pushtest D/DonkyPlugin: value = do_not_collapse
-*/
     @Override
     public void onMessageReceived(String from, Bundle extras) {
         Log.d(LOG_TAG, "onMessage - from: " + from);
 
         if (extras != null) {
-
-            for (String key : extras.keySet()) {
-                Log.d(LOG_TAG, "key = " + key);
-                Object json = extras.get(key);
-                Log.d(LOG_TAG, "value = " + json);
-            }
 
             if(DonkyPlugin.isInForeground()){
 
@@ -68,6 +62,29 @@ public class GCMIntentService extends GcmListenerService implements PushConstant
 
     public void createNotification(Context context, Bundle extras) {
 
+
+        String payload = (String) extras.get("payload");
+
+        Log.d(LOG_TAG, "payload = " + payload);
+
+        String body = "";
+        String senderDisplayName = "";
+        String avatarAssetId = "";
+
+        try {
+            JSONObject jsonObj = new JSONObject(payload);
+            body = jsonObj.optString("body");
+            senderDisplayName = jsonObj.optString("senderDisplayName");
+            avatarAssetId = jsonObj.optString("avatarAssetId", null);
+
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+
+        Log.d(LOG_TAG, "body = " + body);
+        Log.d(LOG_TAG, "senderDisplayName = " + senderDisplayName);
+
+
         NotificationManager mNotificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
         String appName = (String) context.getPackageManager().getApplicationLabel(context.getApplicationInfo());
 
@@ -85,10 +102,9 @@ public class GCMIntentService extends GcmListenerService implements PushConstant
         NotificationCompat.Builder mBuilder =
                 new NotificationCompat.Builder(context)
                         .setWhen(System.currentTimeMillis())
-                        .setContentTitle(extras.getString(TITLE))
-                        .setTicker(extras.getString(TITLE))
+                        .setContentTitle(senderDisplayName)
+                        .setTicker(senderDisplayName)
                         .setContentIntent(contentIntent);
-                        //.setAutoCancel(true);
 
         mBuilder.setDefaults(Notification.DEFAULT_VIBRATE);
 
@@ -96,15 +112,39 @@ public class GCMIntentService extends GcmListenerService implements PushConstant
 
         mBuilder.setSound(android.provider.Settings.System.DEFAULT_NOTIFICATION_URI);
 
-        mBuilder.setContentText("TODO: get content text ;-)");
+        mBuilder.setContentText(body);
 
         mBuilder.setNumber(0);
         
-        mBuilder.addAction(android.R.color.transparent, "Yes", contentIntent);
+        // mBuilder.addAction(android.R.color.transparent, "Yes", contentIntent);
         
-        mBuilder.addAction(android.R.color.transparent, "No", contentIntent);
+        // mBuilder.addAction(android.R.color.transparent, "No", contentIntent);
+
+        // TODO: need to get this AssetDownloadUrlFormat from somewhere ...
+        if(avatarAssetId != ""){
+            mBuilder.setLargeIcon(getBitmapFromURL("https://dev-client-api.mobiledonky.com/asset/" + avatarAssetId));
+        }
 
         mNotificationManager.notify(appName, notId, mBuilder.build());
+    }
+
+    /**
+     *
+     * @param strURL
+     * @return
+     */
+    public Bitmap getBitmapFromURL(String strURL) {
+        try {
+            URL url = new URL(strURL);
+            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+            connection.setDoInput(true);
+            connection.connect();
+            InputStream input = connection.getInputStream();
+            return BitmapFactory.decodeStream(input);
+        } catch (IOException e) {
+            e.printStackTrace();
+            return null;
+        }
     }
 
 }
