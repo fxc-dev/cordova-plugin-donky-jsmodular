@@ -25,6 +25,7 @@ import android.content.res.Resources;
 
 import android.support.v4.app.NotificationCompat;
 
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -77,6 +78,40 @@ public class GCMIntentService extends GcmListenerService implements PushConstant
             senderDisplayName = jsonObj.optString("senderDisplayName");
             avatarAssetId = jsonObj.optString("avatarAssetId", null);
 
+            JSONArray buttonSets = jsonObj.optJSONArray("buttonSets");
+
+            if(buttonSets != null){
+                // need to search for JSONObject that has property platform: "Mobile"
+
+                for(int i = 0 ; i < buttonSets.length(); i++){
+
+                    JSONObject buttonSet = buttonSets.getJSONObject(i);
+
+                    String platform = buttonSet.optString("platform");
+
+                    if(platform.equals("Mobile")){
+
+                        JSONArray buttonSetActions = buttonSet.optJSONArray("buttonSetActions");
+
+                        if(buttonSetActions!=null){
+                            for(int j = 0 ; j < buttonSetActions.length() ; j++){
+
+                                JSONObject buttonSetAction = buttonSetActions.getJSONObject(j);
+
+                                String actionType = buttonSetAction.optString("actionType");
+                                String label = buttonSetAction.optString("label");
+                                String data = buttonSetAction.optString("data");
+
+                                Log.d(LOG_TAG, "actionType = " + actionType);
+                                Log.d(LOG_TAG, "label = " + label);
+                                Log.d(LOG_TAG, "data = " + data);
+
+                            }
+                        }
+                    }
+                }
+            }
+
         } catch (JSONException e) {
             e.printStackTrace();
         }
@@ -115,6 +150,9 @@ public class GCMIntentService extends GcmListenerService implements PushConstant
         mBuilder.setContentText(body);
 
         mBuilder.setNumber(0);
+
+
+
         
         // mBuilder.addAction(android.R.color.transparent, "Yes", contentIntent);
         
