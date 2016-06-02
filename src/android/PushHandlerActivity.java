@@ -9,7 +9,7 @@ import android.os.Bundle;
 import android.util.Log;
 
 public class PushHandlerActivity extends Activity implements PushConstants {
-    private static String LOG_TAG = "PushPlugin_PushHandlerActivity";
+    private static String LOG_TAG = "PushPlugin";
 
     /*
      * this activity will be started if the user touches a notification that we own.
@@ -19,20 +19,16 @@ public class PushHandlerActivity extends Activity implements PushConstants {
      */
     @Override
     public void onCreate(Bundle savedInstanceState) {
-        
-        // TODO: what is this for ?
-        // GCMIntentService gcm = new GCMIntentService();
-        // gcm.setNotification(getIntent().getIntExtra(NOT_ID, 0), "");
-        
+
         super.onCreate(savedInstanceState);
         Log.v(LOG_TAG, "onCreate");
 
         boolean isPushPluginActive = DonkyPlugin.isActive();
-        processPushBundle(isPushPluginActive);
+        boolean launch = processPushBundle(isPushPluginActive);
 
         finish();
 
-        if (!isPushPluginActive) {
+        if (!isPushPluginActive && launch) {
             forceMainActivityReload();
         }
     }
@@ -40,9 +36,11 @@ public class PushHandlerActivity extends Activity implements PushConstants {
     /**
      * Takes the pushBundle extras from the intent,
      * and sends it through to the PushPlugin for processing.
+     *
      */
-    private void processPushBundle(boolean isPushPluginActive) {
+    private boolean processPushBundle(boolean isPushPluginActive) {
         Bundle extras = getIntent().getExtras();
+        boolean launch = true;
 
         if (extras != null)	{
             Bundle originalExtras = extras.getBundle(PUSH_BUNDLE);
@@ -55,6 +53,9 @@ public class PushHandlerActivity extends Activity implements PushConstants {
             Log.d(LOG_TAG, "label = " + label);
             Log.d(LOG_TAG, "data = " + data);
 
+            if(actionType != null && actionType.equals("Dismiss")){
+                launch = false;
+            }
 
             originalExtras.putBoolean(FOREGROUND, false);
             originalExtras.putBoolean(COLDSTART, !isPushPluginActive);
@@ -63,6 +64,8 @@ public class PushHandlerActivity extends Activity implements PushConstants {
 
             DonkyPlugin.sendExtras(originalExtras);
         }
+
+        return launch;
     }
 
     /**

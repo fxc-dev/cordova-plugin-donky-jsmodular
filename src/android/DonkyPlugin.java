@@ -137,17 +137,6 @@ public class DonkyPlugin extends CordovaPlugin implements PushConstants{
             callbackContext.success(platfornInfo);
             return true;
         }
-        /*else if(action.equals("displayNotification")){
-            
-            String title = data.getString(0);
-            String message = data.getString(1);
-            String notificationId = data.getString(2);
-            
-            createNotification(title, message, notificationId);
-            
-            callbackContext.success();
-            return true;
-        }*/
         else if(action.equals("registerForPush")){
 
             cordova.getThreadPool().execute(new Runnable() {
@@ -302,60 +291,4 @@ public class DonkyPlugin extends CordovaPlugin implements PushConstants{
         return uuid;
     }
 
-
-    /**
-     * Called from JS ...
-     * 1) push comes in
-     *
-     * @param title
-     * @param message
-     */
-     /*
-    public void createNotification( String title, String message, String notificationId) {
-
-        Log.v(LOG_TAG, "createNotification(\"" + title + "\", \"" + message + "\", "  + notificationId + ")");
-
-        Context context = getApplicationContext();
-
-        NotificationManager mNotificationManager = (NotificationManager) this.cordova.getActivity().getSystemService(Context.NOTIFICATION_SERVICE);
-        String appName = (String) context.getPackageManager().getApplicationLabel(context.getApplicationInfo());
-        String packageName = context.getPackageName();
-        Resources resources = context.getResources();
-
-        Random r = new Random();
-        int notId = r.nextInt(100000);
-
-        Intent notificationIntent = new Intent(context, PushHandlerActivity.class);
-
-        notificationIntent.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP | Intent.FLAG_ACTIVITY_CLEAR_TOP);
-        notificationIntent.putExtra(PUSH_BUNDLE, gCachedExtrasMap.get(notificationId));
-        notificationIntent.putExtra(NOT_ID, notId);
-
-        int requestCode = new Random().nextInt();
-        PendingIntent contentIntent = PendingIntent.getActivity(getApplicationContext(), requestCode, notificationIntent, PendingIntent.FLAG_UPDATE_CURRENT);
-
-
-        NotificationCompat.Builder mBuilder =
-                new NotificationCompat.Builder(context)
-                        .setWhen(System.currentTimeMillis())
-                        .setContentTitle(title)
-                        .setTicker(title)
-                        .setContentIntent(contentIntent)
-                        .setAutoCancel(true);
-
-        mBuilder.setDefaults(Notification.DEFAULT_VIBRATE);
-
-        mBuilder.setSmallIcon(context.getApplicationInfo().icon);
-
-        mBuilder.setSound(android.provider.Settings.System.DEFAULT_NOTIFICATION_URI);
-
-        mBuilder.setContentText(message);
-
-        mBuilder.setNumber(0);
-
-        mNotificationManager.notify(appName, notId, mBuilder.build());
-    }*/
-
-
-    
 }

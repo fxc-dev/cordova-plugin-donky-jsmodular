@@ -51,13 +51,11 @@ public class GCMIntentService extends GcmListenerService implements PushConstant
 
 
     /**
-     *
      * @param extras
      * @param buttonSetAction
      * @return
      */
-    private PendingIntent getPendingIntentForAction(int notificationId, Bundle extras, JSONObject buttonSetAction){
-
+    private PendingIntent __getPendingIntentForAction(int notificationId, Bundle extras, JSONObject buttonSetAction){
 
         Intent notificationIntent = new Intent(this, PushHandlerActivity.class);
         notificationIntent.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP | Intent.FLAG_ACTIVITY_CLEAR_TOP);
@@ -79,10 +77,33 @@ public class GCMIntentService extends GcmListenerService implements PushConstant
             notificationIntent.putExtra("data", data);
         }
 
-        int requestCode = new Random().nextInt();
-        PendingIntent contentIntent = PendingIntent.getActivity(this, requestCode, notificationIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+        return PendingIntent.getActivity(this, new Random().nextInt(), notificationIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+    }
 
-        return contentIntent;
+
+    private PendingIntent getPendingIntentForAction(int notificationId, Bundle extras, JSONObject buttonSetAction) {
+
+        Intent notificationIntent = new Intent(this, PushIntentService.class);
+
+        notificationIntent.putExtra(PUSH_BUNDLE, extras);
+        notificationIntent.putExtra(NOT_ID, notificationId);
+
+        if(buttonSetAction != null){
+
+            String actionType = buttonSetAction.optString("actionType");
+            String label = buttonSetAction.optString("label");
+            String data = buttonSetAction.optString("data");
+
+            Log.d(LOG_TAG, "actionType = " + actionType);
+            Log.d(LOG_TAG, "label = " + label);
+            Log.d(LOG_TAG, "data = " + data);
+
+            notificationIntent.putExtra("actionType", actionType);
+            notificationIntent.putExtra("label", label);
+            notificationIntent.putExtra("data", data);
+        }
+
+        return PendingIntent.getService(this, new Random().nextInt(), notificationIntent, PendingIntent.FLAG_UPDATE_CURRENT );
     }
 
 
