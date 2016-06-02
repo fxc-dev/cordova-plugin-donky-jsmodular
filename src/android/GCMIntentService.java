@@ -2,14 +2,13 @@ package com.donky.plugin;
 
 import android.app.PendingIntent;
 import android.content.Intent;
-import android.content.pm.PackageManager;
-import android.content.res.AssetManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.Bundle;
 import android.util.Log;
 
 import com.google.android.gms.gcm.GcmListenerService;
+import com.lepojevic.pushtest.R;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -21,7 +20,6 @@ import android.app.Notification;
 import android.app.NotificationManager;
 
 import android.content.Context;
-import android.content.res.Resources;
 
 import android.support.v4.app.NotificationCompat;
 
@@ -51,18 +49,53 @@ public class GCMIntentService extends GcmListenerService implements PushConstant
         }
     }
 
+
     /**
-     * Forces the main activity to re-launch if it's unloaded.
      *
-    private void forceMainActivityReload() {
-        PackageManager pm = getPackageManager();
-        Intent launchIntent = pm.getLaunchIntentForPackage(getApplicationContext().getPackageName());
+     * @param extras
+     * @param buttonSetAction
+     * @return
+     */
+    private PendingIntent getPendingIntentForAction(int notificationId, Bundle extras, JSONObject buttonSetAction){
 
-        startActivity(launchIntent);
-    }*/
 
+        Intent notificationIntent = new Intent(this, PushHandlerActivity.class);
+        notificationIntent.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+        notificationIntent.putExtra(PUSH_BUNDLE, extras);
+        notificationIntent.putExtra(NOT_ID, notificationId);
+
+        if(buttonSetAction != null){
+
+            String actionType = buttonSetAction.optString("actionType");
+            String label = buttonSetAction.optString("label");
+            String data = buttonSetAction.optString("data");
+
+            Log.d(LOG_TAG, "actionType = " + actionType);
+            Log.d(LOG_TAG, "label = " + label);
+            Log.d(LOG_TAG, "data = " + data);
+
+            notificationIntent.putExtra("actionType", actionType);
+            notificationIntent.putExtra("label", label);
+            notificationIntent.putExtra("data", data);
+        }
+
+        int requestCode = new Random().nextInt();
+        PendingIntent contentIntent = PendingIntent.getActivity(this, requestCode, notificationIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+
+        return contentIntent;
+    }
+
+
+    /**
+     *
+     * @param context
+     * @param extras
+     */
     public void createNotification(Context context, Bundle extras) {
 
+
+        Random r = new Random();
+        int notificationId = r.nextInt(100000);
 
         String payload = (String) extras.get("payload");
 
@@ -71,8 +104,9 @@ public class GCMIntentService extends GcmListenerService implements PushConstant
         String body = "";
         String senderDisplayName = "";
         String avatarAssetId = "";
+        String interactionType = "";
         JSONArray buttonSets = null;
-
+        JSONArray buttonSetActions = null;
 
         try {
             JSONObject jsonObj = new JSONObject(payload);
@@ -81,47 +115,6 @@ public class GCMIntentService extends GcmListenerService implements PushConstant
             avatarAssetId = jsonObj.optString("avatarAssetId", null);
 
             buttonSets = jsonObj.optJSONArray("buttonSets");
-
-        } catch (JSONException e) {
-            e.printStackTrace();
-        }
-
-        Log.d(LOG_TAG, "body = " + body);
-        Log.d(LOG_TAG, "senderDisplayName = " + senderDisplayName);
-
-
-        NotificationManager mNotificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-        String appName = (String) context.getPackageManager().getApplicationLabel(context.getApplicationInfo());
-
-        Random r = new Random();
-        int notId = r.nextInt(100000);
-
-        Intent notificationIntent = new Intent(this, PushHandlerActivity.class);
-        notificationIntent.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP | Intent.FLAG_ACTIVITY_CLEAR_TOP);
-        notificationIntent.putExtra(PUSH_BUNDLE, extras);
-        notificationIntent.putExtra(NOT_ID, notId);
-
-        int requestCode = new Random().nextInt();
-        PendingIntent contentIntent = PendingIntent.getActivity(this, requestCode, notificationIntent, PendingIntent.FLAG_UPDATE_CURRENT);
-
-        NotificationCompat.Builder mBuilder =
-                new NotificationCompat.Builder(context)
-                        .setWhen(System.currentTimeMillis())
-                        .setContentTitle(senderDisplayName)
-                        .setTicker(senderDisplayName)
-                        .setContentIntent(contentIntent);
-
-        mBuilder.setDefaults(Notification.DEFAULT_VIBRATE);
-
-        mBuilder.setSmallIcon(context.getApplicationInfo().icon);
-
-        mBuilder.setSound(android.provider.Settings.System.DEFAULT_NOTIFICATION_URI);
-
-        mBuilder.setContentText(body);
-
-        mBuilder.setNumber(0);
-
-        try {
 
             if(buttonSets != null){
                 // need to search for JSONObject that has property platform: "Mobile"
@@ -134,25 +127,10 @@ public class GCMIntentService extends GcmListenerService implements PushConstant
 
                     if(platform.equals("Mobile")){
 
-                        JSONArray buttonSetActions = buttonSet.optJSONArray("buttonSetActions");
+                        interactionType = buttonSet.optString("interactionType");
 
-                        if(buttonSetActions!=null){
-                            for(int j = 0 ; j < buttonSetActions.length() ; j++){
+                        buttonSetActions = buttonSet.optJSONArray("buttonSetActions");
 
-                                JSONObject buttonSetAction = buttonSetActions.getJSONObject(j);
-
-                                String actionType = buttonSetAction.optString("actionType");
-                                String label = buttonSetAction.optString("label");
-                                String data = buttonSetAction.optString("data");
-
-                                Log.d(LOG_TAG, "actionType = " + actionType);
-                                Log.d(LOG_TAG, "label = " + label);
-                                Log.d(LOG_TAG, "data = " + data);
-
-                                mBuilder.addAction(android.R.color.transparent, label, contentIntent);
-
-                            }
-                        }
                     }
                 }
             }
@@ -161,13 +139,82 @@ public class GCMIntentService extends GcmListenerService implements PushConstant
             e.printStackTrace();
         }
 
+        Log.d(LOG_TAG, "body = " + body);
+        Log.d(LOG_TAG, "senderDisplayName = " + senderDisplayName);
+
+        NotificationManager mNotificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+        String appName = (String) context.getPackageManager().getApplicationLabel(context.getApplicationInfo());
+
+        // one button
+
+        JSONObject buttonSetActionForOneButton = null;
+
+        if(interactionType.equals("OneButton")){
+
+            try {
+                buttonSetActionForOneButton = buttonSetActions.getJSONObject(0);
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+        }
+
+        PendingIntent contentIntent = getPendingIntentForAction( notificationId, extras, buttonSetActionForOneButton );
+
+
+        NotificationCompat.Builder mBuilder =
+                new NotificationCompat.Builder(context)
+                        .setWhen(System.currentTimeMillis())
+                        .setContentTitle(senderDisplayName)
+                        .setTicker(senderDisplayName)
+                        .setContentIntent(contentIntent)
+                        .setAutoCancel(true);
+
+        mBuilder.setDefaults(Notification.DEFAULT_VIBRATE);
+
+        int smallIconId = R.drawable.ic_stat_notification;
+
+        mBuilder.setSmallIcon(smallIconId);
+
+        mBuilder.setColor(0xff0000FF);
+
+        mBuilder.setSound(android.provider.Settings.System.DEFAULT_NOTIFICATION_URI);
+
+        mBuilder.setContentText(body);
+
+        mBuilder.setNumber(0);
+
+        if(interactionType.equals("TwoButton")) {
+            try {
+
+                if(buttonSetActions!=null){
+                    for(int j = 0 ; j < buttonSetActions.length() ; j++){
+
+                        JSONObject buttonSetAction = buttonSetActions.getJSONObject(j);
+
+                        String label = buttonSetAction.optString("label");
+
+                        PendingIntent actionIntent = getPendingIntentForAction( notificationId, extras, buttonSetAction );
+
+                        mBuilder.addAction(android.R.color.transparent, label, actionIntent);
+
+                    }
+                }
+
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+
+        }
+
+
         // TODO: need to get this AssetDownloadUrlFormat from somewhere ...
         if(avatarAssetId != ""){
             mBuilder.setLargeIcon(getBitmapFromURL("https://dev-client-api.mobiledonky.com/asset/" + avatarAssetId));
         }
 
-        mNotificationManager.notify(appName, notId, mBuilder.build());
+        mNotificationManager.notify(appName, notificationId, mBuilder.build());
     }
+
 
     /**
      *
