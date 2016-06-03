@@ -60,7 +60,7 @@ public class GCMIntentService extends GcmListenerService implements PushConstant
         Intent notificationIntent = new Intent(this, PushHandlerActivity.class);
         notificationIntent.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP | Intent.FLAG_ACTIVITY_CLEAR_TOP);
         notificationIntent.putExtra(PUSH_BUNDLE, extras);
-        notificationIntent.putExtra(NOT_ID, notificationId);
+        notificationIntent.putExtra(NOTIFICATION_ID, notificationId);
 
         if(buttonSetAction != null){
 
@@ -83,10 +83,14 @@ public class GCMIntentService extends GcmListenerService implements PushConstant
 
     private PendingIntent getPendingIntentForAction(int notificationId, Bundle extras, JSONObject buttonSetAction) {
 
-        Intent notificationIntent = new Intent(this, PushIntentService.class);
+        Intent intent = new Intent(this, PushIntentService.class);
 
-        notificationIntent.putExtra(PUSH_BUNDLE, extras);
-        notificationIntent.putExtra(NOT_ID, notificationId);
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.HONEYCOMB_MR1) {
+            intent.addFlags(Intent.FLAG_INCLUDE_STOPPED_PACKAGES);
+        }
+
+        intent.putExtra(PUSH_BUNDLE, extras);
+        intent.putExtra(NOTIFICATION_ID, notificationId);
 
         if(buttonSetAction != null){
 
@@ -94,16 +98,18 @@ public class GCMIntentService extends GcmListenerService implements PushConstant
             String label = buttonSetAction.optString("label");
             String data = buttonSetAction.optString("data");
 
+//            intent.setAction(actionType);
+
             Log.d(LOG_TAG, "actionType = " + actionType);
             Log.d(LOG_TAG, "label = " + label);
             Log.d(LOG_TAG, "data = " + data);
 
-            notificationIntent.putExtra("actionType", actionType);
-            notificationIntent.putExtra("label", label);
-            notificationIntent.putExtra("data", data);
+            intent.putExtra("actionType", actionType);
+            intent.putExtra("label", label);
+            intent.putExtra("data", data);
         }
 
-        return PendingIntent.getService(this, new Random().nextInt(), notificationIntent, PendingIntent.FLAG_UPDATE_CURRENT );
+        return PendingIntent.getService(this.getApplicationContext(), new Random().nextInt(), intent, PendingIntent.FLAG_UPDATE_CURRENT );
     }
 
 
@@ -114,9 +120,9 @@ public class GCMIntentService extends GcmListenerService implements PushConstant
      */
     public void createNotification(Context context, Bundle extras) {
 
+        int notificationId = extras.get("notificationId").hashCode();
 
-        Random r = new Random();
-        int notificationId = r.nextInt(100000);
+        Log.d(LOG_TAG, "notificationId = " + notificationId);
 
         String payload = (String) extras.get("payload");
 
@@ -126,6 +132,7 @@ public class GCMIntentService extends GcmListenerService implements PushConstant
         String senderDisplayName = "";
         String avatarAssetId = "";
         String interactionType = "";
+
         JSONArray buttonSets = null;
         JSONArray buttonSetActions = null;
 
@@ -187,8 +194,8 @@ public class GCMIntentService extends GcmListenerService implements PushConstant
                         .setWhen(System.currentTimeMillis())
                         .setContentTitle(senderDisplayName)
                         .setTicker(senderDisplayName)
-                        .setContentIntent(contentIntent)
-                        .setAutoCancel(true);
+                        .setContentIntent(contentIntent);
+                        //.setAutoCancel(true);
 
         mBuilder.setDefaults(Notification.DEFAULT_VIBRATE);
 
@@ -233,7 +240,7 @@ public class GCMIntentService extends GcmListenerService implements PushConstant
             mBuilder.setLargeIcon(getBitmapFromURL("https://dev-client-api.mobiledonky.com/asset/" + avatarAssetId));
         }
 
-        mNotificationManager.notify(appName, notificationId, mBuilder.build());
+        mNotificationManager.notify(notificationId, mBuilder.build());
     }
 
 

@@ -9,7 +9,7 @@ import android.os.Bundle;
 import android.util.Log;
 
 public class PushHandlerActivity extends Activity implements PushConstants {
-    private static String LOG_TAG = "PushPlugin";
+    private static String LOG_TAG = "DonkyPlugin";
 
     /*
      * this activity will be started if the user touches a notification that we own.
