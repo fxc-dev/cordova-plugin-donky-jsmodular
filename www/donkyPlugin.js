@@ -381,6 +381,20 @@ DonkyPlugin.prototype.registerForPush = function(successCallback, errorCallback,
     cordova.exec(successCallback, errorCallback, "donky", "registerForPush",[arg1]);        
 }
 
+
+
+/**
+ * Method to set push options 
+ * @param {Callback} successCallback - callback to call if method was succsful with the deviceId
+ * @param {Callback} errorCallback - callback to call if method failed with the error messag
+ * @param {String} arg1 - JSon object ontaining the options
+ */
+DonkyPlugin.prototype.setPushOptions = function(successCallback, errorCallback, arg1){
+    cordova.exec(successCallback, errorCallback, "donky", "setPushOptions",[arg1]);        
+}
+
+
+
 /**
  * Method to register for push notifications
  * @param {Callback} successCallback - callback to call if method was succsful with the deviceId

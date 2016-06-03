@@ -5,15 +5,10 @@ import org.apache.cordova.*;
 import org.json.JSONArray;
 import org.json.JSONException;
 
-import android.app.Notification;
-import android.app.NotificationManager;
-import android.app.PendingIntent;
-import android.content.Intent;
-import android.content.res.Resources;
+import android.content.SharedPreferences;
 import android.provider.Settings;
 import org.json.JSONObject;
 import android.content.Context;
-import android.support.v4.app.NotificationCompat;
 import android.util.Log;
 import android.os.Bundle;
 import java.io.IOException;
@@ -23,7 +18,6 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Date;
 import java.util.Map;
-import java.util.Random;
 import java.util.TimeZone;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -135,6 +129,39 @@ public class DonkyPlugin extends CordovaPlugin implements PushConstants{
             platfornInfo.put("launchTimeUtc", nowAsISO);
 
             callbackContext.success(platfornInfo);
+            return true;
+        }
+        else if(action.equals("setPushOptions")){
+            String jsonOptions = data.getString(0);
+            Log.v(LOG_TAG, "setPushOptions: " + jsonOptions);
+
+            JSONObject options = new JSONObject(jsonOptions);
+
+            JSONObject androidOptions = options.getJSONObject("android");
+
+
+            String environment = androidOptions.optString("environment","");
+            Boolean vibrate = androidOptions.optBoolean("vibrate", true);
+            Integer iconId = androidOptions.optInt("iconId", 0);
+            String iconColor = androidOptions.optString("iconColor","0xff0000FF");
+
+            Log.v(LOG_TAG, "environment: " + environment);
+            Log.v(LOG_TAG, "vibrate: " + vibrate);
+            Log.v(LOG_TAG, "iconId: " + iconId);
+            Log.v(LOG_TAG, "iconColor: " + iconColor);
+
+            SharedPreferences sharedPref = getApplicationContext().getSharedPreferences(COM_DONKY_PLUGIN, Context.MODE_PRIVATE);
+
+            SharedPreferences.Editor editor = sharedPref.edit();
+
+            editor.putString("environment", environment);
+            editor.putBoolean("vibrate", vibrate);
+            editor.putInt("iconId", iconId);
+            editor.putString("iconColor", iconColor);
+
+            editor.commit();
+
+            callbackContext.success();
             return true;
         }
         else if(action.equals("registerForPush")){

@@ -1,7 +1,7 @@
 package com.donky.plugin;
 
 public interface PushConstants {
-    public static final String COM_ADOBE_PHONEGAP_PUSH = "com.adobe.phonegap.push";
+    public static final String COM_DONKY_PLUGIN = "DonkyPlugin";
     public static final String DEVICE_TOKEN = "deviceToken";
     public static final String FOREGROUND = "foreground";
     public static final String TITLE = "title";
@@ -19,13 +19,6 @@ public interface PushConstants {
     public static final String MSGCNT = "msgcnt";
     public static final String VIBRATION_PATTERN = "vibrationPattern";
     public static final String STYLE = "style";
-    public static final String SUMMARY_TEXT = "summaryText";
-    public static final String PICTURE = "picture";
-    public static final String GCM_N = "gcm.n.";
-    public static final String GCM_NOTIFICATION = "gcm.notification";
-    public static final String GCM_NOTIFICATION_BODY = "gcm.notification.body";
-    public static final String UA_PREFIX = "com.urbanairship.push";
-    public static final String PARSE_COM_DATA = "data";
     public static final String ALERT = "alert";
     public static final String MESSAGE = "message";
     public static final String BODY = "body";
@@ -53,5 +46,4 @@ public interface PushConstants {
     public static final String FORCE_SHOW = "forceShow";
     public static final String GCM = "GCM";
     public static final String CONTENT_AVAILABLE = "content-available";
-    public static final String TOPICS = "topics";
 }

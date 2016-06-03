@@ -4,6 +4,7 @@ import android.app.IntentService;
 import android.app.NotificationManager;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.util.Log;
 
@@ -14,17 +15,17 @@ public class PushIntentService extends IntentService implements PushConstants{
     /**
      * Action name of intent. Notification described in intent should be canceled.
      */
-    static final String ACTION_CANCEL_NOTIFICATION = "com.donky.plugin.push.CANCEL_NOTIFICATION";
+    static final String ACTION_CANCEL_NOTIFICATION = "com.donky.plugin.CANCEL_NOTIFICATION";
 
     /**
      * Action name of intent. Notification described in intent should be canceled. Main application Activity will be opened.
      */
-    static final String ACTION_OPEN_APPLICATION = "com.donky.plugin.push.OPEN";
+    static final String ACTION_OPEN_APPLICATION = "com.donky.plugin.OPEN";
 
     /**
      * Action name of intent. Notification described in intent should be canceled. System will try to open activity responding to deep link.
      */
-    static final String ACTION_OPEN_DEEP_LINK = "com.donky.plugin.push.DEEP_LINK";
+    static final String ACTION_OPEN_DEEP_LINK = "com.donky.plugin.DEEP_LINK";
 
 
     public PushIntentService() {
@@ -34,46 +35,39 @@ public class PushIntentService extends IntentService implements PushConstants{
     @Override
     protected void onHandleIntent(final Intent intent) {
 
-        String action = intent.getAction();
-
-        Log.d(LOG_TAG, "intent.getAction() returns " + action);
-
         Bundle extras = intent.getExtras();
-
 
         if (extras != null) {
             Bundle originalExtras = extras.getBundle(PUSH_BUNDLE);
 
-            String actionType = extras.getString("actionType");
-            String label = extras.getString("label");
-            String data = extras.getString("data");
+            if (ACTION_CANCEL_NOTIFICATION.equals(intent.getAction())){
 
-            Log.d(LOG_TAG, "actionType = " + actionType);
-            Log.d(LOG_TAG, "label = " + label);
-            Log.d(LOG_TAG, "data = " + data);
+                Log.v(LOG_TAG, ACTION_CANCEL_NOTIFICATION);
 
-            // How to
+                // TODO: what to return to donky ?
+                //  - need to ensure we don't get this message again
+                // need to report the button click ...
+            }
+            else if(ACTION_OPEN_APPLICATION.equals(intent.getAction())){
+
+                Log.v(LOG_TAG, ACTION_OPEN_APPLICATION);
+
+                // TODO: what to return to donky ?
+                //  - need to ensure we don't get this message again
+                // need to report the button click ...
 
 
+                PackageManager pm = getPackageManager();
+                Intent launchIntent = pm.getLaunchIntentForPackage(getApplicationContext().getPackageName());
+                startActivity(launchIntent);
+            }
+            else if(ACTION_OPEN_DEEP_LINK.equals(intent.getAction())){
 
+                Log.v(LOG_TAG, ACTION_OPEN_DEEP_LINK);
+                String deepLinkData = extras.getString("DeepLinkData");
+                Log.d(LOG_TAG, "DeepLinkData = " + deepLinkData);
 
-
-        /*
-        if (ACTION_CANCEL_NOTIFICATION.equals(intent.getAction())){
-
-            Log.v(LOG_TAG, ACTION_CANCEL_NOTIFICATION);
-
-        }
-        else if(ACTION_OPEN_APPLICATION.equals(intent.getAction())){
-
-            Log.v(LOG_TAG, ACTION_OPEN_APPLICATION);
-
-        }
-        else if(ACTION_OPEN_DEEP_LINK.equals(intent.getAction())){
-
-            Log.v(LOG_TAG, ACTION_OPEN_DEEP_LINK);
-
-        }*/
+            }
 
         }
 

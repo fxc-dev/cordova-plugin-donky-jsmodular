@@ -2,6 +2,7 @@ package com.donky.plugin;
 
 import android.app.PendingIntent;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.Bundle;
@@ -32,6 +33,11 @@ public class GCMIntentService extends GcmListenerService implements PushConstant
 
     private static final String LOG_TAG = "DonkyPlugin";
 
+    /**
+     *
+     * @param from
+     * @param extras
+     */
     @Override
     public void onMessageReceived(String from, Bundle extras) {
         Log.d(LOG_TAG, "onMessage - from: " + from);
@@ -49,38 +55,6 @@ public class GCMIntentService extends GcmListenerService implements PushConstant
         }
     }
 
-
-    /**
-     * @param extras
-     * @param buttonSetAction
-     * @return
-     */
-    private PendingIntent __getPendingIntentForAction(int notificationId, Bundle extras, JSONObject buttonSetAction){
-
-        Intent notificationIntent = new Intent(this, PushHandlerActivity.class);
-        notificationIntent.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP | Intent.FLAG_ACTIVITY_CLEAR_TOP);
-        notificationIntent.putExtra(PUSH_BUNDLE, extras);
-        notificationIntent.putExtra(NOTIFICATION_ID, notificationId);
-
-        if(buttonSetAction != null){
-
-            String actionType = buttonSetAction.optString("actionType");
-            String label = buttonSetAction.optString("label");
-            String data = buttonSetAction.optString("data");
-
-            Log.d(LOG_TAG, "actionType = " + actionType);
-            Log.d(LOG_TAG, "label = " + label);
-            Log.d(LOG_TAG, "data = " + data);
-
-            notificationIntent.putExtra("actionType", actionType);
-            notificationIntent.putExtra("label", label);
-            notificationIntent.putExtra("data", data);
-        }
-
-        return PendingIntent.getActivity(this, new Random().nextInt(), notificationIntent, PendingIntent.FLAG_UPDATE_CURRENT);
-    }
-
-
     private PendingIntent getPendingIntentForAction(int notificationId, Bundle extras, JSONObject buttonSetAction) {
 
         Intent intent = new Intent(this, PushIntentService.class);
@@ -95,18 +69,23 @@ public class GCMIntentService extends GcmListenerService implements PushConstant
         if(buttonSetAction != null){
 
             String actionType = buttonSetAction.optString("actionType");
-            String label = buttonSetAction.optString("label");
-            String data = buttonSetAction.optString("data");
 
-//            intent.setAction(actionType);
 
-            Log.d(LOG_TAG, "actionType = " + actionType);
-            Log.d(LOG_TAG, "label = " + label);
-            Log.d(LOG_TAG, "data = " + data);
+            if(actionType.equals("DeepLink")){
+                intent.setAction(PushIntentService.ACTION_OPEN_DEEP_LINK);
+                String deepLinkData = buttonSetAction.optString("data");
+                intent.putExtra("DeepLinkData", deepLinkData);
+                Log.d(LOG_TAG, "DeepLinkData = " + deepLinkData);
+            }else if(actionType.equals("Dismiss")){
+                intent.setAction(PushIntentService.ACTION_CANCEL_NOTIFICATION);
+            }else if(actionType.equals("Open")){
+                intent.setAction(PushIntentService.ACTION_OPEN_APPLICATION);
+            }
 
-            intent.putExtra("actionType", actionType);
-            intent.putExtra("label", label);
-            intent.putExtra("data", data);
+        }
+        else
+        {
+            intent.setAction(PushIntentService.ACTION_OPEN_APPLICATION);
         }
 
         return PendingIntent.getService(this.getApplicationContext(), new Random().nextInt(), intent, PendingIntent.FLAG_UPDATE_CURRENT );
@@ -119,6 +98,19 @@ public class GCMIntentService extends GcmListenerService implements PushConstant
      * @param extras
      */
     public void createNotification(Context context, Bundle extras) {
+
+        SharedPreferences sharedPref = getApplicationContext().getSharedPreferences(COM_DONKY_PLUGIN, Context.MODE_PRIVATE);
+
+        String environment = sharedPref.getString("environment", "");
+        Boolean vibrate = sharedPref.getBoolean("vibrate", true);
+        Integer iconId = sharedPref.getInt("iconId", 0);
+        String iconColor = sharedPref.getString("iconColor", "");
+
+        Log.d(LOG_TAG, "SharedPreferences::environment = " + environment);
+        Log.d(LOG_TAG, "SharedPreferences::vibrate = " + vibrate);
+        Log.d(LOG_TAG, "SharedPreferences::iconId = " + iconId);
+        Log.d(LOG_TAG, "SharedPreferences::iconColor = " + iconColor);
+
 
         int notificationId = extras.get("notificationId").hashCode();
 
