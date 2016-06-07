@@ -106,13 +106,12 @@ public class GCMIntentService extends GcmListenerService implements PushConstant
         String environment = sharedPref.getString("environment", "");
         Boolean vibrate = sharedPref.getBoolean("vibrate", true);
         Integer iconId = sharedPref.getInt("iconId", 0);
-        String iconColor = sharedPref.getString("iconColor", "");
+        Integer iconColor = sharedPref.getInt("iconColor", android.R.color.transparent);
 
         Log.d(LOG_TAG, "SharedPreferences::environment = " + environment);
         Log.d(LOG_TAG, "SharedPreferences::vibrate = " + vibrate);
         Log.d(LOG_TAG, "SharedPreferences::iconId = " + iconId);
         Log.d(LOG_TAG, "SharedPreferences::iconColor = " + iconColor);
-
 
         int notificationId = extras.get("notificationId").hashCode();
 
@@ -193,11 +192,9 @@ public class GCMIntentService extends GcmListenerService implements PushConstant
 
         mBuilder.setDefaults(Notification.DEFAULT_VIBRATE);
 
-        int smallIconId = R.drawable.ic_stat_notification;
+        mBuilder.setSmallIcon(iconId);
 
-        mBuilder.setSmallIcon(smallIconId);
-
-        mBuilder.setColor(0xff0000FF);
+        mBuilder.setColor(iconColor);
 
         mBuilder.setSound(android.provider.Settings.System.DEFAULT_NOTIFICATION_URI);
 
@@ -231,7 +228,7 @@ public class GCMIntentService extends GcmListenerService implements PushConstant
 
         // TODO: need to get this AssetDownloadUrlFormat from somewhere ...
         if(avatarAssetId != ""){
-            mBuilder.setLargeIcon(getBitmapFromURL("https://dev-client-api.mobiledonky.com/asset/" + avatarAssetId));
+            mBuilder.setLargeIcon(getBitmapFromURL("https://" + environment + "client-api.mobiledonky.com/asset/" + avatarAssetId));
         }
 
         mNotificationManager.notify(notificationId, mBuilder.build());

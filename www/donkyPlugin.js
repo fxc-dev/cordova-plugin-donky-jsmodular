@@ -71,6 +71,7 @@ function DonkyPlugin(){
             if(window.donkyCore){
                 
                 try{
+                    // These need to be set BEFORE integrator calls  calls donkyCore.initialise() - hence it is occurring in  onCordovaReady callback
                     donkyCore.donkyAccount.setOperatingSystem(self.platform);
                     donkyCore.donkyAccount._setDeviceId(self.deviceId);
                 }catch(e){
@@ -78,7 +79,7 @@ function DonkyPlugin(){
                 }
 
                 /**
-                 *  new push notification has arrived
+                 *  new push notification has arrived (iOS)
                  */
                 donkyCore.subscribeToLocalEvent("pushNotification", function (event) {
                     pluginLog("pushNotification: " + JSON.stringify(event.data, null, 4));
@@ -148,9 +149,7 @@ function DonkyPlugin(){
                                         // this will mark as received and fire a local event so not sure I want to add in like this ...
                                         // flag to not publish a local event !!!                            
                                         donkyPushLogic.processPushMessage(notification, false);
-                                        // this will delete the message            
-                                        
-                                        // TODO: check that notification.darta.messageId is the correct thing to pass               
+                                        // this will delete the message                                                    
                                         donkyPushLogic.setSimplePushResult(notification.id, buttonText);
                                     }                                                        
                                 break;
@@ -216,12 +215,10 @@ function DonkyPlugin(){
                         pluginLog("procesGCMPushMessage: ButtonClicked=" + result.additionalData.ButtonClicked);
                         
                         donkyCore.addNotificationToRecentCache(notificationId);
-
+                        // used to calculate stats
+                        notification.displayed = new Date().valueOf();
                         // this will mark as received and fire a local event so not sure I want to add in like this ...
                         // flag to not publish a local event !!!                            
-                        
-                        //
-                        notification.displayed = new Date().valueOf();
 
                         donkyPushLogic.processPushMessage(notification, false);
 
@@ -306,8 +303,6 @@ function DonkyPlugin(){
                                 }
                                 break;
                             } 
-                            
-                            
                         }
                         
                                                 
@@ -350,7 +345,7 @@ function DonkyPlugin(){
 
 
 /**
- * Internal callback function for native code to call to trigger an event for the client.
+ * Internal callback function for iOS native code to call to trigger an event for the client.
  * A CustomEvent is created which can be intercepted as follows:
  * 
  *  document.addEventListener("donkyevent", function (e) {
@@ -374,7 +369,7 @@ DonkyPlugin.prototype.callback = function(eventName, eventData){
 }
 
 /**
- * Method to query platform related info
+ * Method to query platform related info - intenal (executed on onCordovaReady)
  * @param {Callback} successCallback - callback to call if method was succsful with the deviceId
  * @param {Callback} errorCallback - callback to call if method failed with the error messag
  */
@@ -396,6 +391,24 @@ DonkyPlugin.prototype.registerForPush = function(successCallback, errorCallback,
 
 /**
  * Method to set push options 
+ * 
+ * 
+            // TODO: don't ned these callbacks ...
+            window.cordova.plugins.donkyPlugin.setPushOptions(function(){}, function(){}, {
+                ios: {
+                    
+                },
+                android:{
+                    environment: "dev-",
+                    vibrate: true,
+                    iconId: 0,
+                    color: 0xff0000FF,
+                    senderId: "793570521924"                 
+                }
+            });
+ * 
+ * 
+ * 
  * @param {Callback} successCallback - callback to call if method was succsful with the deviceId
  * @param {Callback} errorCallback - callback to call if method failed with the error messag
  * @param {String} arg1 - JSon object ontaining the options

@@ -36,8 +36,8 @@ public class DonkyPlugin extends CordovaPlugin implements PushConstants{
     // these are used if the push comes in and the webview isnt initialised
     private static Bundle gCachedExtras = null;
 
-        
-    private static Map <String, Bundle> gCachedExtrasMap = new HashMap<String,Bundle>(); 
+
+    private static Map <String, Bundle> gCachedExtrasMap = new HashMap<String,Bundle>();
 
 
     /**
@@ -64,7 +64,7 @@ public class DonkyPlugin extends CordovaPlugin implements PushConstants{
      */
     public void initialize(CordovaInterface cordova, CordovaWebView webView) {
         super.initialize(cordova, webView);
-        gForeground = true;        
+        gForeground = true;
     }
 
 
@@ -86,7 +86,7 @@ public class DonkyPlugin extends CordovaPlugin implements PushConstants{
         gForeground = false;
         gWebView = null;
     }
-    
+
     public static boolean isInForeground() {
       return gForeground;
     }
@@ -94,7 +94,7 @@ public class DonkyPlugin extends CordovaPlugin implements PushConstants{
     public static boolean isActive() {
         return gWebView != null;
     }
-    
+
 
 
     /**
@@ -104,7 +104,7 @@ public class DonkyPlugin extends CordovaPlugin implements PushConstants{
      * @param data              JSONArry of arguments for the plugin.
      * @param callbackContext   The callback id used when calling back into JavaScript.
      * @return                  True if the action was valid, false if not.
-     */    
+     */
     @Override
     public boolean execute(String action, final JSONArray data, final CallbackContext callbackContext) throws JSONException {
 
@@ -139,16 +139,17 @@ public class DonkyPlugin extends CordovaPlugin implements PushConstants{
 
             JSONObject androidOptions = options.getJSONObject("android");
 
-
             String environment = androidOptions.optString("environment","");
             Boolean vibrate = androidOptions.optBoolean("vibrate", true);
             Integer iconId = androidOptions.optInt("iconId", 0);
-            String iconColor = androidOptions.optString("iconColor","0xff0000FF");
+            Integer iconColor = androidOptions.optInt("iconColor", android.R.color.transparent);
+            String senderId = androidOptions.optString("senderId");
 
             Log.v(LOG_TAG, "environment: " + environment);
             Log.v(LOG_TAG, "vibrate: " + vibrate);
             Log.v(LOG_TAG, "iconId: " + iconId);
             Log.v(LOG_TAG, "iconColor: " + iconColor);
+            Log.v(LOG_TAG, "senderId: " + senderId);
 
             SharedPreferences sharedPref = getApplicationContext().getSharedPreferences(COM_DONKY_PLUGIN, Context.MODE_PRIVATE);
 
@@ -157,7 +158,8 @@ public class DonkyPlugin extends CordovaPlugin implements PushConstants{
             editor.putString("environment", environment);
             editor.putBoolean("vibrate", vibrate);
             editor.putInt("iconId", iconId);
-            editor.putString("iconColor", iconColor);
+            editor.putInt("iconColor", iconColor);
+            editor.putString("senderId", senderId);
 
             editor.commit();
 
@@ -166,48 +168,54 @@ public class DonkyPlugin extends CordovaPlugin implements PushConstants{
         }
         else if(action.equals("registerForPush")){
 
+
+
             cordova.getThreadPool().execute(new Runnable() {
                 public void run() {
                     pushContext = callbackContext;
-                    String senderID = null;
 
-                    try {
-                        senderID = data.getString(0);
-                    } catch (JSONException e) {
-                        e.printStackTrace();
-                    }
+                    SharedPreferences sharedPref = getApplicationContext().getSharedPreferences(COM_DONKY_PLUGIN, Context.MODE_PRIVATE);
+
+                    String senderID = sharedPref.getString("senderId", "");
 
                     Log.v(LOG_TAG, "senderId=" + senderID);
-                    String token;
 
-                    try {
+                    if(!"".equals(senderID)){
 
-                        token = InstanceID.getInstance(getApplicationContext()).getToken(senderID, GCM);
+                        String token;
 
-                        if (!"".equals(token)) {
-                            JSONObject json = new JSONObject().put(DEVICE_TOKEN, token);
+                        try {
 
-                            Log.v(LOG_TAG, "onRegistered: " + json.toString());
+                            token = InstanceID.getInstance(getApplicationContext()).getToken(senderID, GCM);
 
-                            DonkyPlugin.sendEvent( json );
-                        } else {
-                            callbackContext.error("Empty device Tokem received from GCM");
-                            return;
+                            if (!"".equals(token)) {
+                                JSONObject json = new JSONObject().put(DEVICE_TOKEN, token);
+
+                                Log.v(LOG_TAG, "onRegistered: " + json.toString());
+
+                                DonkyPlugin.sendEvent( json );
+                            } else {
+                                callbackContext.error("Empty device Tokem received from GCM");
+                                return;
+                            }
+
+                        } catch (JSONException e) {
+                            Log.e(LOG_TAG, "execute: Got JSON Exception " + e.getMessage());
+                            callbackContext.error(e.getMessage());
+                        } catch (IOException e) {
+                            Log.e(LOG_TAG, "execute: Got JSON Exception " + e.getMessage());
+                            callbackContext.error(e.getMessage());
                         }
 
-                    } catch (JSONException e) {
-                        Log.e(LOG_TAG, "execute: Got JSON Exception " + e.getMessage());
-                        callbackContext.error(e.getMessage());
-                    } catch (IOException e) {
-                        Log.e(LOG_TAG, "execute: Got JSON Exception " + e.getMessage());
-                        callbackContext.error(e.getMessage());
+                        if (gCachedExtras != null) {
+                            Log.v(LOG_TAG, "sending cached extras");
+                            sendExtras(gCachedExtras);
+                            gCachedExtras = null;
+                        }
+                    }else{
+                        callbackContext.error("Missing senderId");
                     }
 
-                    if (gCachedExtras != null) {
-                        Log.v(LOG_TAG, "sending cached extras");
-                        sendExtras(gCachedExtras);
-                        gCachedExtras = null;
-                    }
                 }
             });
 
@@ -218,9 +226,9 @@ public class DonkyPlugin extends CordovaPlugin implements PushConstants{
     }
 
     public static void sendEvent(JSONObject _json) {
-        
+
         Log.v(LOG_TAG, "sendEvent(" + _json.toString() + ")");
-        
+
         PluginResult pluginResult = new PluginResult(PluginResult.Status.OK, _json);
         pluginResult.setKeepCallback(true);
         if (pushContext != null) {
@@ -295,10 +303,10 @@ public class DonkyPlugin extends CordovaPlugin implements PushConstants{
     public static void sendExtras(Bundle extras) {
         if (extras != null) {
             if (gWebView != null) {
-                
+
                 String notificationId = extras.getString("notificationId");
                 gCachedExtrasMap.put(notificationId, extras);
-                
+
                 sendEvent(convertBundleToJson(extras));
             } else {
                 Log.v(LOG_TAG, "sendExtras: caching extras to send at a later time.");
