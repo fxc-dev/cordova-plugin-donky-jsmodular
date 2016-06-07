@@ -69,7 +69,9 @@ public class GCMIntentService extends GcmListenerService implements PushConstant
         if(buttonSetAction != null){
 
             String actionType = buttonSetAction.optString("actionType");
+            String label = buttonSetAction.optString("label");
 
+            intent.putExtra("ButtonLabel", label);
 
             if(actionType.equals("DeepLink")){
                 intent.setAction(PushIntentService.ACTION_OPEN_DEEP_LINK);

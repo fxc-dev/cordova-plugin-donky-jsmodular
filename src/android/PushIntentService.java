@@ -40,6 +40,10 @@ public class PushIntentService extends IntentService implements PushConstants{
         if (extras != null) {
             Bundle originalExtras = extras.getBundle(PUSH_BUNDLE);
 
+
+            // ws it a button click ? if so, handleButtonAction
+
+
             if (ACTION_CANCEL_NOTIFICATION.equals(intent.getAction())){
 
                 Log.v(LOG_TAG, ACTION_CANCEL_NOTIFICATION);
@@ -69,6 +73,8 @@ public class PushIntentService extends IntentService implements PushConstants{
 
             }
 
+            originalExtras.putString("ButtonClicked", extras.getString("ButtonLabel"));
+            DonkyPlugin.sendExtras(originalExtras);
         }
 
 

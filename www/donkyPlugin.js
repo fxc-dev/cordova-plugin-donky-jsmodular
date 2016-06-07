@@ -26,6 +26,7 @@ function DonkyPlugin(){
 
     var self = this;
 
+    // TODO: need to ensure this is called if an interactive  push is received and the dismiss button is clicked  
     function syncBadgeCount(){
         // set badge count 
         
@@ -108,41 +109,7 @@ function DonkyPlugin(){
                     });
                 });      
                 
-                // android push message has nothing in it other than notificationId
-                // get the message here and pass back the info to android native to display a notification
-                // TODO: can we cache this so we don't need to get it again ?
-                /*
-                donkyCore.subscribeToLocalEvent("getGCMNotification", function (event) {
-                    var notificationId = event.data;
-                    
-                    donkyCore.donkyNetwork.getServerNotification(notificationId, function(notification){
-                    
-                        if(notification){
 
-                            var title = "";
-                            var body = "";
-                            
-                            switch(notification.type){
-                                case "RichMessage":
-                                title = "From: " + notification.data.senderDisplayName;
-                                body = notification.data.description;
-                                break;
-
-                                case "SimplePushMessage":
-                                title = "From: " + notification.data.senderDisplayName;
-                                body = notification.data.body;    
-                                // TODO: interactive buttons ...                            
-                                break;
-                                
-                            }
-                            
-                            cordova.exec(function(){}, function(){}, "donky", "displayNotification", [title, body, notificationId]);                            
-                        }
-                    });                     
-                    
-                });*/
-                  
-                
                 /**
                  * 
                  */
@@ -176,11 +143,15 @@ function DonkyPlugin(){
                             switch(notification.type){
                                 case "SimplePushMessage":
                                     if(window.donkyPushLogic){
+
+                                        notification.displayed = new Date().valueOf();
                                         // this will mark as received and fire a local event so not sure I want to add in like this ...
                                         // flag to not publish a local event !!!                            
                                         donkyPushLogic.processPushMessage(notification, false);
-                                        // this will delete the message                            
-                                        donkyPushLogic.setSimplePushResult(notificationId, buttonText);
+                                        // this will delete the message            
+                                        
+                                        // TODO: check that notification.darta.messageId is the correct thing to pass               
+                                        donkyPushLogic.setSimplePushResult(notification.id, buttonText);
                                     }                                                        
                                 break;
                             }                                                       
@@ -220,8 +191,48 @@ function DonkyPlugin(){
                         "sessionTrigger" : (self.applicationStateOnPush !== undefined && self.applicationStateOnPush !== AppStates.active) ? "Notification" : "None"
                     };
 
-                    donkyCore.queueClientNotifications(launchClientNotification);                    
+                    donkyCore.queueClientNotifications(launchClientNotification);
                 }          
+
+                /**
+                 *
+                 */                
+                function procesGCMPushMessage(result){
+                                                
+                    var notificationId = result.additionalData.notificationId;
+                                                            
+                    // need to synthesise a server notification so we can call _processServerNotifications() if neessary ...                    
+                    var notification = {
+                        id: notificationId,
+                        type: result.additionalData.notificationType,
+                        data: result.additionalData.payload,
+                        // TODO: get from GCM payload
+                        createdOn: result.additionalData.notificationCreatedOn ? result.additionalData.notificationCreatedOn : new Date().toISOString()
+                    };
+                    
+                    // Is this a button click                                        
+                    if(result.additionalData.ButtonClicked){
+                        
+                        pluginLog("procesGCMPushMessage: ButtonClicked=" + result.additionalData.ButtonClicked);
+                        
+                        donkyCore.addNotificationToRecentCache(notificationId);
+
+                        // this will mark as received and fire a local event so not sure I want to add in like this ...
+                        // flag to not publish a local event !!!                            
+                        
+                        //
+                        notification.displayed = new Date().valueOf();
+
+                        donkyPushLogic.processPushMessage(notification, false);
+
+                        donkyPushLogic.setSimplePushResult(notification.id, result.additionalData.ButtonClicked);
+                        
+                    }else{
+                        // TODO: need to apply more logic than this ...
+                        donkyCore._processServerNotifications([notification]);                        
+                    }
+                }
+                
                                                           
                 // This event is ALWAYS published on succesful initialisation - hook into it and run our analysis ...
                 donkyCore.subscribeToLocalEvent("DonkyInitialised", function(event) {
@@ -266,14 +277,7 @@ function DonkyPlugin(){
                                 });                                    
                             }
                             
-                        }/*else if(result.additionalData && 
-
-                            // TODO: convertBundleToJson only supports string values ;-(
-                            result.additionalData.getNotification === "true"){
-                                                        
-                            donkyCore.publishLocalEvent({ type: "getGCMNotification", data: result.additionalData.notificationId });
-                            
-                        }*/else{
+                        }else{
                             
                             var notification = {}; 
                             
@@ -282,20 +286,27 @@ function DonkyPlugin(){
                                 {
                                     notification.notificationId = result.userInfo.notificationId;
                                     notification.applicationState = result.applicationState;
+                                    // TODO: publish event or just call method ?
+                                    donkyCore.publishLocalEvent({ type: "pushNotification", data: notification });
+                                    
                                 }
                                 break;
                                 
+                                /**
+                                 * We have the entire payload on Android so no need to get the notification 
+                                 * Also if a button has been clicked, we have that info too. 
+                                 * We should have all we need to call setSimplePushResult() 
+                                 */                                
                                 case "Android":
                                 {
-                                    notification.notificationId = result.additionalData.notificationId;
+                                    procesGCMPushMessage(result);
+                                    //notification.notificationId = result.additionalData.notificationId;
                                     // TODO: implement this for android ...
-                                    notification.applicationState = AppStates.active;
+                                    //notification.applicationState = AppStates.active;
                                 }
                                 break;
                             } 
                             
-                            // TODO: publish event or just call method ?
-                            donkyCore.publishLocalEvent({ type: "pushNotification", data: notification });
                             
                         }
                         
