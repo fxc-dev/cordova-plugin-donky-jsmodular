@@ -1,4 +1,3 @@
-
 var channel = require('cordova/channel'),
     utils = require('cordova/utils');
 
@@ -11,22 +10,23 @@ channel.waitForInitialization('onCordovaInfoReady');
  */
 function DonkyPlugin(){
 
-    var AppStates= {
+    var AppStates = {
         active: 0,
         inactive: 1,
         background: 2       
-    }
+    };
 
     function pluginLog(message){
         console.log(message);
+        /*
         if(window.donkyCore){            
             donkyCore.publishLocalEvent({ type: "DonkyPluginLogMessage", data: message });                                                    
-        }                                           
+        }*/                                          
     }
 
     var self = this;
 
-    // TODO: need to ensure this is called if an interactive  push is received and the dismiss button is clicked  
+    // TODO: need to ensure this is called if an interactive  push is received and the dismiss button is clicked (for iOS)  
     function syncBadgeCount(){
         // set badge count 
         
@@ -174,6 +174,8 @@ function DonkyPlugin(){
                     };
                   
                     self.applicationStateOnPush = undefined;
+
+                    pluginLog("queueAppSession: " + JSON.stringify(sessionClientNotification));
                     
                     donkyCore.queueClientNotifications(sessionClientNotification);                    
                 }
@@ -189,6 +191,8 @@ function DonkyPlugin(){
                         "operatingSystem": donkyCore.donkyAccount.getOperatingSystem(),
                         "sessionTrigger" : (self.applicationStateOnPush !== undefined && self.applicationStateOnPush !== AppStates.active) ? "Notification" : "None"
                     };
+
+                    pluginLog("queueAppLaunch: " + JSON.stringify(launchClientNotification));
 
                     donkyCore.queueClientNotifications(launchClientNotification);
                 }          
@@ -229,17 +233,9 @@ function DonkyPlugin(){
                         donkyCore._processServerNotifications([notification]);                        
                     }
                 }
-                
-                                                          
-                // This event is ALWAYS published on succesful initialisation - hook into it and run our analysis ...
-                donkyCore.subscribeToLocalEvent("DonkyInitialised", function(event) {
 
-                    pluginLog("DonkyInitialised event received in DonkyPlugin()");   
-                    
-                    queueAppLaunch();
-                    
-                    var isPushEnabled = donkyCore.donkyAccount.isPushEnabled();
-                    
+                function doPushRegistation(){
+
                     // TODO: where to get senderId from ?
                     //      - could pass in some extra stuff in donky initialised and get out of there 
                     //      - will hardcode for now ;-)
@@ -267,10 +263,10 @@ function DonkyPlugin(){
                             // integrator can control this with donkyCore.donkyAccount.enablePush()
                             if(donkyCore.donkyAccount.isPushEnabled() !== false){
                                 
-                                pluginLog("sendPushConfiguration", JSON.stringify(pushConfig, null, 4));
+                                pluginLog("sending push Configuration: " + JSON.stringify(pushConfig, null, 4));
 
                                 donkyCore.donkyAccount.sendPushConfiguration(pushConfig, function(result){            
-                                    pluginLog("sendPushConfiguration result: ", JSON.stringify(result, null, 4));
+                                    pluginLog("sendPushConfiguration result: " + JSON.stringify(result, null, 4));
                                 });                                    
                             }
                             
@@ -309,8 +305,22 @@ function DonkyPlugin(){
                     }, function(error){
                         pluginLog("registerForPush failed" + JSON.stringify(error));
                     },
-                    self.platform === "iOS" ? JSON.stringify(donkyCore.getiOSButtonCategories()) : "793570521924");
-                                            
+                    self.platform === "iOS" ? JSON.stringify(donkyCore.getiOSButtonCategories()) : undefined);
+
+                }
+                
+                                                          
+                // This event is ALWAYS published on succesful initialisation - hook into it and run our analysis ...
+                donkyCore.subscribeToLocalEvent("DonkyInitialised", function(event) {
+
+                    pluginLog("DonkyInitialised event received in DonkyPlugin()");   
+                    
+                    queueAppLaunch();
+                                        
+                    setTimeout(function(){
+                        doPushRegistation();
+                    },10);
+                    
                 });
                 
                /**
@@ -334,8 +344,14 @@ function DonkyPlugin(){
                                         
                 });        
             }
-            
-            channel.onCordovaInfoReady.fire();                        
+
+
+            pluginLog("==> channel.onCordovaInfoReady.fire();");
+
+            channel.onCordovaInfoReady.fire();
+
+            pluginLog("<== channel.onCordovaInfoReady.fire();");
+
         },function(e){
             self.available = false;
             utils.alert("[ERROR] Error initializing Cordova: " + e);            
@@ -450,7 +466,11 @@ DonkyPlugin.prototype.openDeepLink = function(successCallback, errorCallback, li
     cordova.exec(successCallback, errorCallback, "donky", "openDeepLink", [link]);        
 }
 
+
+DonkyPlugin.prototype.log = function(message){
+    console.log(message);
+}
+
+
+
 module.exports = new DonkyPlugin();
-
-
-

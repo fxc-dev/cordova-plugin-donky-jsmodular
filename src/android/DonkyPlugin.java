@@ -141,13 +141,13 @@ public class DonkyPlugin extends CordovaPlugin implements PushConstants{
 
             String environment = androidOptions.optString("environment","");
             Boolean vibrate = androidOptions.optBoolean("vibrate", true);
-            Integer iconId = androidOptions.optInt("iconId", 0);
-            Integer iconColor = androidOptions.optInt("iconColor", android.R.color.transparent);
+            String icon = androidOptions.optString("icon");
+            String iconColor = androidOptions.optString("iconColor");
             String senderId = androidOptions.optString("senderId");
 
             Log.v(LOG_TAG, "environment: " + environment);
             Log.v(LOG_TAG, "vibrate: " + vibrate);
-            Log.v(LOG_TAG, "iconId: " + iconId);
+            Log.v(LOG_TAG, "icon: " + icon);
             Log.v(LOG_TAG, "iconColor: " + iconColor);
             Log.v(LOG_TAG, "senderId: " + senderId);
 
@@ -157,8 +157,8 @@ public class DonkyPlugin extends CordovaPlugin implements PushConstants{
 
             editor.putString("environment", environment);
             editor.putBoolean("vibrate", vibrate);
-            editor.putInt("iconId", iconId);
-            editor.putInt("iconColor", iconColor);
+            editor.putString("icon", icon);
+            editor.putString("iconColor", iconColor);
             editor.putString("senderId", senderId);
 
             editor.commit();

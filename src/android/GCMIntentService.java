@@ -3,13 +3,14 @@ package com.donky.plugin;
 import android.app.PendingIntent;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.util.Log;
 
 import com.google.android.gms.gcm.GcmListenerService;
-import com.lepojevic.pushtest.R;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -47,7 +48,7 @@ public class GCMIntentService extends GcmListenerService implements PushConstant
             if(DonkyPlugin.isInForeground()){
 
                 DonkyPlugin.sendExtras(extras);
-                    
+
             }else{
                 createNotification(getApplicationContext(), extras);
             }
@@ -102,15 +103,15 @@ public class GCMIntentService extends GcmListenerService implements PushConstant
     public void createNotification(Context context, Bundle extras) {
 
         SharedPreferences sharedPref = getApplicationContext().getSharedPreferences(COM_DONKY_PLUGIN, Context.MODE_PRIVATE);
-
+        Resources resources = context.getResources();
         String environment = sharedPref.getString("environment", "");
         Boolean vibrate = sharedPref.getBoolean("vibrate", true);
-        Integer iconId = sharedPref.getInt("iconId", 0);
-        Integer iconColor = sharedPref.getInt("iconColor", android.R.color.transparent);
+        String icon = sharedPref.getString("icon", "");
+        String iconColor = sharedPref.getString("iconColor", "");
 
         Log.d(LOG_TAG, "SharedPreferences::environment = " + environment);
         Log.d(LOG_TAG, "SharedPreferences::vibrate = " + vibrate);
-        Log.d(LOG_TAG, "SharedPreferences::iconId = " + iconId);
+        Log.d(LOG_TAG, "SharedPreferences::icon = " + icon);
         Log.d(LOG_TAG, "SharedPreferences::iconColor = " + iconColor);
 
         int notificationId = extras.get("notificationId").hashCode();
@@ -181,20 +182,39 @@ public class GCMIntentService extends GcmListenerService implements PushConstant
 
         PendingIntent contentIntent = getPendingIntentForAction( notificationId, extras, buttonSetActionForOneButton );
 
-
         NotificationCompat.Builder mBuilder =
                 new NotificationCompat.Builder(context)
                         .setWhen(System.currentTimeMillis())
                         .setContentTitle(senderDisplayName)
                         .setTicker(senderDisplayName)
                         .setContentIntent(contentIntent);
-                        //.setAutoCancel(true);
+        //.setAutoCancel(true);
 
         mBuilder.setDefaults(Notification.DEFAULT_VIBRATE);
 
+
+        int iconId = 0;
+        if (icon != null && !"".equals(icon)) {
+            iconId = resources.getIdentifier(icon, DRAWABLE, context.getPackageName());
+            Log.d(LOG_TAG, "using icon from plugin options");
+        }
+        if (iconId == 0) {
+            Log.d(LOG_TAG, "no icon resource found - using application icon");
+            iconId = context.getApplicationInfo().icon;
+        }
         mBuilder.setSmallIcon(iconId);
 
-        mBuilder.setColor(iconColor);
+        int _iconColor = 0;
+        if (iconColor != null && !"".equals(iconColor)) {
+            try {
+                _iconColor = Color.parseColor(iconColor);
+            } catch (IllegalArgumentException e) {
+                Log.e(LOG_TAG, "couldn't parse color from android options");
+            }
+        }
+        if (_iconColor != 0) {
+            mBuilder.setColor(_iconColor);
+        }
 
         mBuilder.setSound(android.provider.Settings.System.DEFAULT_NOTIFICATION_URI);
 
