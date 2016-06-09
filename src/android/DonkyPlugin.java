@@ -22,8 +22,6 @@ import java.util.TimeZone;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 
-
-
 import com.google.android.gms.iid.InstanceID;
 
 
@@ -66,7 +64,6 @@ public class DonkyPlugin extends CordovaPlugin implements PushConstants{
         super.initialize(cordova, webView);
         gForeground = true;
     }
-
 
     @Override
     public void onPause(boolean multitasking) {
@@ -143,13 +140,11 @@ public class DonkyPlugin extends CordovaPlugin implements PushConstants{
             Boolean vibrate = androidOptions.optBoolean("vibrate", true);
             String icon = androidOptions.optString("icon");
             String iconColor = androidOptions.optString("iconColor");
-            String senderId = androidOptions.optString("senderId");
 
             Log.v(LOG_TAG, "environment: " + environment);
             Log.v(LOG_TAG, "vibrate: " + vibrate);
             Log.v(LOG_TAG, "icon: " + icon);
             Log.v(LOG_TAG, "iconColor: " + iconColor);
-            Log.v(LOG_TAG, "senderId: " + senderId);
 
             SharedPreferences sharedPref = getApplicationContext().getSharedPreferences(COM_DONKY_PLUGIN, Context.MODE_PRIVATE);
 
@@ -159,7 +154,6 @@ public class DonkyPlugin extends CordovaPlugin implements PushConstants{
             editor.putBoolean("vibrate", vibrate);
             editor.putString("icon", icon);
             editor.putString("iconColor", iconColor);
-            editor.putString("senderId", senderId);
 
             editor.commit();
 
@@ -174,11 +168,14 @@ public class DonkyPlugin extends CordovaPlugin implements PushConstants{
                 public void run() {
                     pushContext = callbackContext;
 
-                    SharedPreferences sharedPref = getApplicationContext().getSharedPreferences(COM_DONKY_PLUGIN, Context.MODE_PRIVATE);
+                    String senderID = "";
 
-                    String senderID = sharedPref.getString("senderId", "");
+                    Integer identifier = getApplicationContext().getResources().getIdentifier("sender_id", "string", getApplicationContext().getPackageName());
 
-                    Log.v(LOG_TAG, "senderId=" + senderID);
+                    if(identifier!=0){
+                        senderID = getApplicationContext().getResources().getString(identifier);
+                        Log.v(LOG_TAG, "senderID: " + senderID);
+                    }
 
                     if(!"".equals(senderID)){
 

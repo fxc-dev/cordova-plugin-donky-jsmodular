@@ -1,7 +1,7 @@
 package com.donky.plugin;
 
 public interface PushConstants {
-    public static final String COM_DONKY_PLUGIN = "DonkyPlugin";
+    public static final String COM_DONKY_PLUGIN = "com.donky.plugin";
     public static final String DEVICE_TOKEN = "deviceToken";
     public static final String FOREGROUND = "foreground";
     public static final String TITLE = "title";

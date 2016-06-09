@@ -10,10 +10,12 @@ xmlns="http://apache.org/cordova/ns/plugins/1.0"
     <license>Apache 2.0</license>
     <keywords>cordova,donky</keywords>
 
-  <js-module src="www/donkyPlugin.js" name="donky">
-    <clobbers target="cordova.plugins.donkyPlugin" />
-  </js-module>
+    <js-module src="www/donkyPlugin.js" name="donky">
+        <clobbers target="cordova.plugins.donkyPlugin" />
+    </js-module>
 
+
+    <preference name="SENDER_ID" />
 
     <!-- android -->
     <platform name="android">
@@ -23,6 +25,11 @@ xmlns="http://apache.org/cordova/ns/plugins/1.0"
                 <param name="android-package" value="com.donky.plugin.DonkyPlugin"/>
             </feature>
         </config-file>
+
+        <config-file target="res/values/strings.xml" parent="/resources">
+            <string name="sender_id">$SENDER_ID</string>
+        </config-file>
+
 
         <config-file target="AndroidManifest.xml" parent="/manifest">
           <uses-permission android:name="android.permission.INTERNET" />

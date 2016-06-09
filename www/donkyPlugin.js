@@ -18,10 +18,14 @@ function DonkyPlugin(){
 
     function pluginLog(message){
         console.log(message);
-        /*
-        if(window.donkyCore){            
-            donkyCore.publishLocalEvent({ type: "DonkyPluginLogMessage", data: message });                                                    
-        }*/                                          
+    }
+
+    function pluginError(message){
+        console.error(message);
+    }
+
+    function pluginWarn(message){
+        console.warn(message);
     }
 
     var self = this;
@@ -52,10 +56,87 @@ function DonkyPlugin(){
         self.setBadgeCount(function(){},function(){},badgeCount);        
     }
 
+    /**
+     * FUnction to quere an AppSession notification
+     */
+    function queueAppSession(){
+
+        var sessionClientNotification = {
+            Type: "AppSession",
+            "startTimeUtc": self.launchTimeUtc,
+            "endTimeUtc": new Date().toISOString(),
+            "operatingSystem": donkyCore.donkyAccount.getOperatingSystem(),
+            "sessionTrigger" : (self.applicationStateOnPush !== undefined && self.applicationStateOnPush !== AppStates.active) ? "Notification" : "None"
+        };
+        
+        self.applicationStateOnPush = undefined;
+
+        pluginLog("queueAppSession: " + JSON.stringify(sessionClientNotification));
+        
+        donkyCore.queueClientNotifications(sessionClientNotification);                    
+    }
+                
+    /**
+     * FUnction to quere an AppLaunch notification 
+     */
+    function queueAppLaunch(){
+                                                
+        var launchClientNotification = {
+            Type: "AppLaunch",
+            "launchTimeUtc": self.launchTimeUtc,
+            "operatingSystem": donkyCore.donkyAccount.getOperatingSystem(),
+            "sessionTrigger" : (self.applicationStateOnPush !== undefined && self.applicationStateOnPush !== AppStates.active) ? "Notification" : "None"
+        };
+
+        pluginLog("queueAppLaunch: " + JSON.stringify(launchClientNotification));
+
+        donkyCore.queueClientNotifications(launchClientNotification);
+    }         
+
+    /**
+     *
+     */                
+    function procesGCMPushMessage(result){
+                                    
+        var notificationId = result.additionalData.notificationId;
+                                                
+        // need to synthesise a server notification so we can call _processServerNotifications() if neessary ...                    
+        var notification = {
+            id: notificationId,
+            type: result.additionalData.notificationType,
+            data: result.additionalData.payload,
+            // TODO: get from GCM payload
+            createdOn: result.additionalData.notificationCreatedOn ? result.additionalData.notificationCreatedOn : new Date().toISOString()
+        };
+        
+        // Is this a button click                                        
+        if(result.additionalData.ButtonClicked){
+            
+            pluginLog("procesGCMPushMessage: ButtonClicked=" + result.additionalData.ButtonClicked);
+            
+            donkyCore.addNotificationToRecentCache(notificationId);
+            // used to calculate stats
+            notification.displayed = new Date().valueOf();
+            // this will mark as received and fire a local event so not sure I want to add in like this ...
+            // flag to not publish a local event !!!                            
+
+            donkyPushLogic.processPushMessage(notification, false);
+
+            donkyPushLogic.setSimplePushResult(notification.id, result.additionalData.ButtonClicked);
+            
+        }else{
+            // TODO: need to apply more logic than this ...
+            donkyCore._processServerNotifications([notification]);                        
+        }
+    }     
+    
     channel.onCordovaReady.subscribe(function() {
         pluginLog("onCordovaReady");
         
         self.getPlatformInfo(function(info){
+
+            pluginLog("getPlatformInfo() succeeed: " + JSON.stringify(info));
+
             self.available = true;
 
             self.manufacturer = info.manufacturer;
@@ -110,7 +191,6 @@ function DonkyPlugin(){
                     });
                 });      
                 
-
                 /**
                  * 
                  */
@@ -158,91 +238,12 @@ function DonkyPlugin(){
                     });
                     
                 });                            
-                
 
-                /**
-                 * FUnction to quere an AppSession notification
-                 */
-                function queueAppSession(){
 
-                    var sessionClientNotification = {
-                        Type: "AppSession",
-                        "startTimeUtc": self.launchTimeUtc,
-                        "endTimeUtc": new Date().toISOString(),
-                        "operatingSystem": donkyCore.donkyAccount.getOperatingSystem(),
-                        "sessionTrigger" : (self.applicationStateOnPush !== undefined && self.applicationStateOnPush !== AppStates.active) ? "Notification" : "None"
-                    };
-                  
-                    self.applicationStateOnPush = undefined;
-
-                    pluginLog("queueAppSession: " + JSON.stringify(sessionClientNotification));
-                    
-                    donkyCore.queueClientNotifications(sessionClientNotification);                    
-                }
-                          
-                /**
-                 * FUnction to quere an AppLaunch notification 
-                 */
-                function queueAppLaunch(){
-                                                            
-                    var launchClientNotification = {
-                        Type: "AppLaunch",
-                        "launchTimeUtc": self.launchTimeUtc,
-                        "operatingSystem": donkyCore.donkyAccount.getOperatingSystem(),
-                        "sessionTrigger" : (self.applicationStateOnPush !== undefined && self.applicationStateOnPush !== AppStates.active) ? "Notification" : "None"
-                    };
-
-                    pluginLog("queueAppLaunch: " + JSON.stringify(launchClientNotification));
-
-                    donkyCore.queueClientNotifications(launchClientNotification);
-                }          
-
-                /**
-                 *
-                 */                
-                function procesGCMPushMessage(result){
-                                                
-                    var notificationId = result.additionalData.notificationId;
-                                                            
-                    // need to synthesise a server notification so we can call _processServerNotifications() if neessary ...                    
-                    var notification = {
-                        id: notificationId,
-                        type: result.additionalData.notificationType,
-                        data: result.additionalData.payload,
-                        // TODO: get from GCM payload
-                        createdOn: result.additionalData.notificationCreatedOn ? result.additionalData.notificationCreatedOn : new Date().toISOString()
-                    };
-                    
-                    // Is this a button click                                        
-                    if(result.additionalData.ButtonClicked){
-                        
-                        pluginLog("procesGCMPushMessage: ButtonClicked=" + result.additionalData.ButtonClicked);
-                        
-                        donkyCore.addNotificationToRecentCache(notificationId);
-                        // used to calculate stats
-                        notification.displayed = new Date().valueOf();
-                        // this will mark as received and fire a local event so not sure I want to add in like this ...
-                        // flag to not publish a local event !!!                            
-
-                        donkyPushLogic.processPushMessage(notification, false);
-
-                        donkyPushLogic.setSimplePushResult(notification.id, result.additionalData.ButtonClicked);
-                        
-                    }else{
-                        // TODO: need to apply more logic than this ...
-                        donkyCore._processServerNotifications([notification]);                        
-                    }
-                }
 
                 function doPushRegistation(){
 
-                    // TODO: where to get senderId from ?
-                    //      - could pass in some extra stuff in donky initialised and get out of there 
-                    //      - will hardcode for now ;-)
-                    //      - could get out of localStorage ?
-                    // TODO: 
-                    //      - rename to init ?
-
+                    // Assumption is that Donky is initialised now as we need the button sets
                     self.registerForPush(function(result){
                         pluginLog("registerForPush success callback: " + JSON.stringify(result));
 
@@ -310,6 +311,7 @@ function DonkyPlugin(){
                 }
                 
                                                           
+                pluginLog("subscribing to DonkyInitialised");
                 // This event is ALWAYS published on succesful initialisation - hook into it and run our analysis ...
                 donkyCore.subscribeToLocalEvent("DonkyInitialised", function(event) {
 
@@ -343,6 +345,8 @@ function DonkyPlugin(){
                     },1000);
                                         
                 });        
+            }else{
+                pluginError("window.donkyCore not set in donkyPlugin");
             }
 
 
@@ -354,7 +358,7 @@ function DonkyPlugin(){
 
         },function(e){
             self.available = false;
-            utils.alert("[ERROR] Error initializing Cordova: " + e);            
+            pluginError("[ERROR] Error initializing donkyPlugin: " + e);            
         });
     });
 }

@@ -188,10 +188,10 @@ public class GCMIntentService extends GcmListenerService implements PushConstant
                         .setContentTitle(senderDisplayName)
                         .setTicker(senderDisplayName)
                         .setContentIntent(contentIntent);
-        //.setAutoCancel(true);
 
-        mBuilder.setDefaults(Notification.DEFAULT_VIBRATE);
-
+        if(vibrate){
+            mBuilder.setDefaults(Notification.DEFAULT_VIBRATE);
+        }
 
         int iconId = 0;
         if (icon != null && !"".equals(icon)) {
@@ -242,11 +242,8 @@ public class GCMIntentService extends GcmListenerService implements PushConstant
             } catch (JSONException e) {
                 e.printStackTrace();
             }
-
         }
 
-
-        // TODO: need to get this AssetDownloadUrlFormat from somewhere ...
         if(avatarAssetId != ""){
             mBuilder.setLargeIcon(getBitmapFromURL("https://" + environment + "client-api.mobiledonky.com/asset/" + avatarAssetId));
         }
