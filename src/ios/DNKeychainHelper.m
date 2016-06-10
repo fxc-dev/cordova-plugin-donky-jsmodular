@@ -24,4 +24,8 @@
     return [DNKeychainItemWrapper objectForKey:key];
 }
 
++ (void)deleteObjectForKey:(NSString *)key {
+    [DNKeychainItemWrapper deleteKeychainItem:key];
+}
+
 @end

@@ -234,6 +234,11 @@ static UIWebView* webView;
     [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
 }
 
+- (void) setPushOptions:(CDVInvokedUrlCommand*)command;
+{
+    CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK];    
+    [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];    
+}
 
 - (void)notificationReceived:(NSDictionary *)notificationMessage;
 {

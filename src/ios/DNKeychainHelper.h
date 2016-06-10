@@ -21,6 +21,8 @@
 
 + (id)objectForKey:(NSString *)key;
 
++ (void)deleteObjectForKey:(NSString *)key;
+
 @end
 
 #endif /* DNKeychainHelper_h */

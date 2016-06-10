@@ -147,17 +147,29 @@ function DonkyPlugin(){
             self.bundleId = info.bundleId;
             self.deviceId = info.deviceId;
             self.launchTimeUtc = info.launchTimeUtc;
+
+            // set this so it can safely be picked up in donkyAccount 
+
+            window.donkyDeviceOverrides = {
+                operatingSystem: self.platform,
+                deviceId: self.deviceId
+            };
                 
             // These need to be available ... (integrators responsibility to load)        
+            // TODO: race condition spotted using raw cordova when referring to js files on a CDN on first install
+            // window.donkyCore was not set during the first installateion
+            // net effect of this is the device gets registered as "Web"
+            
+            // TODO: How to resolve this ???
             if(window.donkyCore){
                 
-                try{
+                //try{
                     // These need to be set BEFORE integrator calls  calls donkyCore.initialise() - hence it is occurring in  onCordovaReady callback
-                    donkyCore.donkyAccount.setOperatingSystem(self.platform);
-                    donkyCore.donkyAccount._setDeviceId(self.deviceId);
-                }catch(e){
-                    utils.alert("[ERROR] Error initialising donky: " + e);                    
-                }
+                    //donkyCore.donkyAccount.setOperatingSystem(self.platform);
+                    //donkyCore.donkyAccount._setDeviceId(self.deviceId);
+                //}catch(e){
+                    //utils.alert("[ERROR] Error initialising donky: " + e);                    
+                //}
 
                 /**
                  *  new push notification has arrived (iOS)
@@ -239,8 +251,9 @@ function DonkyPlugin(){
                     
                 });                            
 
-
-
+                /**
+                 * 
+                 */
                 function doPushRegistation(){
 
                     // Assumption is that Donky is initialised now as we need the button sets
@@ -281,8 +294,7 @@ function DonkyPlugin(){
                                     notification.notificationId = result.userInfo.notificationId;
                                     notification.applicationState = result.applicationState;
                                     // TODO: publish event or just call method ?
-                                    donkyCore.publishLocalEvent({ type: "pushNotification", data: notification });
-                                    
+                                    donkyCore.publishLocalEvent({ type: "pushNotification", data: notification });                                    
                                 }
                                 break;
                                 
@@ -301,16 +313,14 @@ function DonkyPlugin(){
                                 break;
                             } 
                         }
-                        
-                                                
+                                                                        
                     }, function(error){
                         pluginLog("registerForPush failed" + JSON.stringify(error));
                     },
                     self.platform === "iOS" ? JSON.stringify(donkyCore.getiOSButtonCategories()) : undefined);
 
                 }
-                
-                                                          
+                                                                          
                 pluginLog("subscribing to DonkyInitialised");
                 // This event is ALWAYS published on succesful initialisation - hook into it and run our analysis ...
                 donkyCore.subscribeToLocalEvent("DonkyInitialised", function(event) {
@@ -348,7 +358,6 @@ function DonkyPlugin(){
             }else{
                 pluginError("window.donkyCore not set in donkyPlugin");
             }
-
 
             pluginLog("==> channel.onCordovaInfoReady.fire();");
 
