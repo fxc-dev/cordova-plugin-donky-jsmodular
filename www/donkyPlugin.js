@@ -333,29 +333,55 @@ function DonkyPlugin(){
             // window.donkyCore was not set during the first installateion
             // net effect of this is the device gets registered as "Web"
 
-
-            // TODO: How to resolve this ???
             if(window.donkyCore){
 
-                // This event is ALWAYS published on succesful initialisation - hook into it and run our analysis ...
-                donkyCore.subscribeToLocalEvent("DonkyInitialised", function(event) {
-
-                    pluginLog("DonkyInitialised event received in DonkyPlugin()");   
+                if(window.DonkyInitialised === true){
                     
+                    pluginLog("Missed the DonkyInitialised event ...");
+
                     queueAppLaunch();
-                                        
-                    setTimeout(function(){
-                        doPushRegistation();
-                    },10);
-                    
-                });
 
+                    subscribeToDonkyEvents();
 
-                subscribeToDonkyEvents();
+                    doPushRegistation();
 
+                }else{
+                    // This event is ALWAYS published on succesful initialisation - hook into it and run our analysis ...
+                    donkyCore.subscribeToLocalEvent("DonkyInitialised", function(event) {
+
+                        pluginLog("DonkyInitialised event received in DonkyPlugin()");   
+                        
+                        queueAppLaunch();
+                                            
+                        setTimeout(function(){
+                            doPushRegistation();
+                        },0);                        
+                    });
+
+                    subscribeToDonkyEvents();
+                }
                 
             }else{
-                pluginError("window.donkyCore not set in donkyPlugin");
+                pluginWarn("window.donkyCore not set in donkyPlugin, will poll for window.DonkyInitialised");
+
+                var interval = 
+                setInterval(function(){
+
+                    if(window.DonkyInitialised === true){
+                        clearInterval(interval);
+                        pluginLog("DonkyInitialised set to true ...");
+
+                        queueAppLaunch();
+
+                        subscribeToDonkyEvents();
+
+                        doPushRegistation();
+
+                    }else{
+                        pluginLog("polling for DonkyInitialised ...");
+                    }
+
+                }, 500);
             }
 
             pluginLog("==> channel.onCordovaInfoReady.fire();");
