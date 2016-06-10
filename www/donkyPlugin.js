@@ -129,7 +129,180 @@ function DonkyPlugin(){
             donkyCore._processServerNotifications([notification]);                        
         }
     }     
-    
+
+    /**
+     * 
+     */
+    function procesAPNSPushMessage(notificationId, applicationState){
+        
+        if(self.applicationStateOnPush === undefined){
+            self.applicationStateOnPush = applicationState;                    
+        }
+                                                                                        
+        donkyCore.donkyNetwork.getServerNotification(notificationId, function(notification){
+
+            if(notification){                            
+                // Haver we already processed this ? doubt it ....
+                if(!donkyCore.findNotificationInRecentCache(notification.id)){
+                    
+                    // need to handle the case when a push message has been received when the app was not active (and noty display it again)                                                                              
+                    if( notification.type === "SimplePushMessage" && applicationState !== AppStates.active){
+                        donkyCore.addNotificationToRecentCache(notification.id);
+                    }else{
+                        donkyCore._processServerNotifications([notification]);    
+                    }
+                    
+                    if(notification.type === "SimplePushMessage" || notification.type === "RichMessage"){
+                        syncBadgeCount();
+                    }                                                                                          
+                }                            
+            }                                                
+        });
+    }
+
+    /**
+     * 
+     */
+    function subscribeToDonkyEvents(){
+        /**
+        *
+        */            
+        donkyCore.subscribeToLocalEvent("AppBackgrounded", function(event) {
+            // queue an AppSession 
+            queueAppSession();
+        });        
+        
+        /**
+        * Need to determine whether app was foregrounded / launched due to a push or just opened.
+        * Foreground event comes in before push event (which contains app state) 
+        */            
+        donkyCore.subscribeToLocalEvent("AppForegrounded", function(event) {
+            self.launchTimeUtc = new Date().toISOString();
+
+            setTimeout(function(){
+                queueAppLaunch();
+            },1000);
+                                
+        });        
+
+        /**
+         * 
+         */
+        donkyCore.subscribeToLocalEvent("PushMessageDeleted", function (event) {
+            syncBadgeCount();
+        });                
+        
+        /**
+         * 
+         */
+        donkyCore.subscribeToLocalEvent("RichMessageRead", function (event) {
+            syncBadgeCount();
+        });                
+
+        /**
+         * A button has been clicked (iOS)
+         * TODO: Honour the action - URL / Deep Link
+         */
+        donkyCore.subscribeToLocalEvent("handleButtonAction", function (event) {
+            pluginLog("handleButtonAction", JSON.stringify(event.data, null, 4));
+            
+            // If SDK not initialised, we can't make rest calls (even if we have a token)  should I change this ?
+            
+            var buttonText = event.data.identifier;
+            var notificationId = event.data.userInfo.notificationId;
+            donkyCore.addNotificationToRecentCache(notificationId);
+                                
+            donkyCore.donkyNetwork.getServerNotification(notificationId, function(notification){
+                if(notification){
+                    
+                    switch(notification.type){
+                        case "SimplePushMessage":
+                            if(window.donkyPushLogic){
+
+                                notification.displayed = new Date().valueOf();
+                                // this will mark as received and fire a local event so not sure I want to add in like this ...
+                                // flag to not publish a local event !!!                            
+                                donkyPushLogic.processPushMessage(notification, false);
+                                // this will delete the message                                                    
+                                donkyPushLogic.setSimplePushResult(notification.id, buttonText);
+                            }                                                        
+                        break;
+                    }                                                       
+                }
+            });
+            
+        });     
+    }
+
+    /**
+     * 
+     */
+    function sendPushConfiguration(deviceToken){
+        var pushConfig = {
+            registrationId : deviceToken,
+            // will be undefined on Android
+            bundleId : self.bundleId
+        }
+
+        if(window.donkyCore){
+            // always query and store this token
+            donkyCore.donkyData.set("pushConfig", pushConfig); 
+            
+            // ONLY do this if enabled or null
+            // integrator can control this with donkyCore.donkyAccount.enablePush()
+            if(donkyCore.donkyAccount.isPushEnabled() !== false){
+                
+                pluginLog("sending push Configuration: " + JSON.stringify(pushConfig, null, 4));
+
+                donkyCore.donkyAccount.sendPushConfiguration(pushConfig, function(result){            
+                    pluginLog("sendPushConfiguration result: " + JSON.stringify(result, null, 4));
+                });                                    
+            }        
+        }else{
+            pluginError("window.donkyCore not set in donkyPlugin::sendPushConfiguration");
+        }
+    }
+
+    /**
+     * 
+     */
+    function doPushRegistation(){
+
+        // Assumption is that Donky is initialised now as we need the button sets
+        self.registerForPush(function(result){
+            pluginLog("registerForPush success callback: " + JSON.stringify(result));
+
+            // success callback re-used for push notifications and returning device token                                                 
+            if(result.deviceToken){                            
+                sendPushConfiguration(result.deviceToken);                            
+            }else{
+                
+                switch( self.platform ){
+                    case "iOS":
+                        procesAPNSPushMessage(result.userInfo.notificationId, result.applicationState);
+                    break;
+                    
+                    /**
+                     * We have the entire payload on Android so no need to get the notification 
+                     * Also if a button has been clicked, we have that info too. 
+                     * We should have all we need to call setSimplePushResult() 
+                     */                                
+                    case "Android":
+                        procesGCMPushMessage(result);
+                    break;
+                } 
+            }
+                                                            
+        }, function(error){
+            pluginLog("registerForPush failed" + JSON.stringify(error));
+        },
+        self.platform === "iOS" ? JSON.stringify(donkyCore.getiOSButtonCategories()) : undefined);
+
+    }
+
+    /**
+     * 
+     */    
     channel.onCordovaReady.subscribe(function() {
         pluginLog("onCordovaReady");
         
@@ -159,169 +332,11 @@ function DonkyPlugin(){
             // TODO: race condition spotted using raw cordova when referring to js files on a CDN on first install
             // window.donkyCore was not set during the first installateion
             // net effect of this is the device gets registered as "Web"
-            
+
+
             // TODO: How to resolve this ???
             if(window.donkyCore){
-                
-                //try{
-                    // These need to be set BEFORE integrator calls  calls donkyCore.initialise() - hence it is occurring in  onCordovaReady callback
-                    //donkyCore.donkyAccount.setOperatingSystem(self.platform);
-                    //donkyCore.donkyAccount._setDeviceId(self.deviceId);
-                //}catch(e){
-                    //utils.alert("[ERROR] Error initialising donky: " + e);                    
-                //}
 
-                /**
-                 *  new push notification has arrived (iOS)
-                 */
-                donkyCore.subscribeToLocalEvent("pushNotification", function (event) {
-                    pluginLog("pushNotification: " + JSON.stringify(event.data, null, 4));
-                    var notificationId = event.data.notificationId;
-                    
-                    if(self.applicationStateOnPush === undefined){
-                        self.applicationStateOnPush = event.data.applicationState;                    
-                    }
-                                                                                                   
-                    donkyCore.donkyNetwork.getServerNotification(notificationId, function(notification){
-
-                        if(notification){                            
-                            // Haver we already processed this ? doubt it ....
-                            if(!donkyCore.findNotificationInRecentCache(notification.id)){
-                                
-                                // need to handle the case when a push message has been received when the app was not active (and noty display it again)                                                                              
-                                if( notification.type === "SimplePushMessage" && event.data.applicationState !== AppStates.active){
-                                    donkyCore.addNotificationToRecentCache(notification.id);
-                                }else{
-                                    donkyCore._processServerNotifications([notification]);    
-                                }
-                                
-                                if(notification.type === "SimplePushMessage" || notification.type === "RichMessage"){
-                                    syncBadgeCount();
-                                }                                                                                          
-                            }                            
-                        }                                                
-                    });
-                });      
-                
-                /**
-                 * 
-                 */
-                donkyCore.subscribeToLocalEvent("PushMessageDeleted", function (event) {
-                    syncBadgeCount();
-                });                
-                
-                /**
-                 * 
-                 */
-                donkyCore.subscribeToLocalEvent("RichMessageRead", function (event) {
-                    syncBadgeCount();
-                });                
-
-                /**
-                 * A button has been clicked (iOS)
-                 * TODO: Honour the action - URL / Deep Link
-                 */
-                donkyCore.subscribeToLocalEvent("handleButtonAction", function (event) {
-                    pluginLog("handleButtonAction", JSON.stringify(event.data, null, 4));
-                    
-                    // If SDK not initialised, we can't make rest calls (even if we have a token)  should I change this ?
-                    
-                    var buttonText = event.data.identifier;
-                    var notificationId = event.data.userInfo.notificationId;
-                    donkyCore.addNotificationToRecentCache(notificationId);
-                                        
-                    donkyCore.donkyNetwork.getServerNotification(notificationId, function(notification){
-                        if(notification){
-                            
-                            switch(notification.type){
-                                case "SimplePushMessage":
-                                    if(window.donkyPushLogic){
-
-                                        notification.displayed = new Date().valueOf();
-                                        // this will mark as received and fire a local event so not sure I want to add in like this ...
-                                        // flag to not publish a local event !!!                            
-                                        donkyPushLogic.processPushMessage(notification, false);
-                                        // this will delete the message                                                    
-                                        donkyPushLogic.setSimplePushResult(notification.id, buttonText);
-                                    }                                                        
-                                break;
-                            }                                                       
-                        }
-                    });
-                    
-                });                            
-
-                /**
-                 * 
-                 */
-                function doPushRegistation(){
-
-                    // Assumption is that Donky is initialised now as we need the button sets
-                    self.registerForPush(function(result){
-                        pluginLog("registerForPush success callback: " + JSON.stringify(result));
-
-                        // success callback re-used for push notifications and returning device token
-                                                 
-                        if(result.deviceToken){
-                            
-                            var pushConfig = {
-                                registrationId : result.deviceToken,
-                                // will be undefined on Android
-                                bundleId : self.bundleId
-                            }
-                                                    
-                            // always query and store this token
-                            donkyCore.donkyData.set("pushConfig", pushConfig); 
-                            
-                            // ONLY do this if enabled or null
-                            // integrator can control this with donkyCore.donkyAccount.enablePush()
-                            if(donkyCore.donkyAccount.isPushEnabled() !== false){
-                                
-                                pluginLog("sending push Configuration: " + JSON.stringify(pushConfig, null, 4));
-
-                                donkyCore.donkyAccount.sendPushConfiguration(pushConfig, function(result){            
-                                    pluginLog("sendPushConfiguration result: " + JSON.stringify(result, null, 4));
-                                });                                    
-                            }
-                            
-                        }else{
-                            
-                            var notification = {}; 
-                            
-                            switch( self.platform ){
-                                case "iOS":
-                                {
-                                    notification.notificationId = result.userInfo.notificationId;
-                                    notification.applicationState = result.applicationState;
-                                    // TODO: publish event or just call method ?
-                                    donkyCore.publishLocalEvent({ type: "pushNotification", data: notification });                                    
-                                }
-                                break;
-                                
-                                /**
-                                 * We have the entire payload on Android so no need to get the notification 
-                                 * Also if a button has been clicked, we have that info too. 
-                                 * We should have all we need to call setSimplePushResult() 
-                                 */                                
-                                case "Android":
-                                {
-                                    procesGCMPushMessage(result);
-                                    //notification.notificationId = result.additionalData.notificationId;
-                                    // TODO: implement this for android ...
-                                    //notification.applicationState = AppStates.active;
-                                }
-                                break;
-                            } 
-                        }
-                                                                        
-                    }, function(error){
-                        pluginLog("registerForPush failed" + JSON.stringify(error));
-                    },
-                    self.platform === "iOS" ? JSON.stringify(donkyCore.getiOSButtonCategories()) : undefined);
-
-                }
-                                                                          
-                pluginLog("subscribing to DonkyInitialised");
                 // This event is ALWAYS published on succesful initialisation - hook into it and run our analysis ...
                 donkyCore.subscribeToLocalEvent("DonkyInitialised", function(event) {
 
@@ -334,27 +349,11 @@ function DonkyPlugin(){
                     },10);
                     
                 });
-                
-               /**
-                *
-                */            
-                donkyCore.subscribeToLocalEvent("AppBackgrounded", function(event) {
-                    // queue an AppSession 
-                    queueAppSession();
-                });        
-                
-               /**
-                * Need to determine whether app was foregrounded / launched due to a push or just opened.
-                * Foreground event comes in before push event (which contains app state) 
-                */            
-                donkyCore.subscribeToLocalEvent("AppForegrounded", function(event) {
-                    self.launchTimeUtc = new Date().toISOString();
 
-                    setTimeout(function(){
-                        queueAppLaunch();
-                    },1000);
-                                        
-                });        
+
+                subscribeToDonkyEvents();
+
+                
             }else{
                 pluginError("window.donkyCore not set in donkyPlugin");
             }
