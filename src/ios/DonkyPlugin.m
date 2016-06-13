@@ -33,25 +33,8 @@ static UIWebView* webView;
     
     if (self.webViewEngine != nil) {
         webView = (UIWebView *)self.webViewEngine.engineWebView;
-    }
-    
-    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(onPause) name:UIApplicationWillResignActiveNotification object:nil];
-    
-    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(onResume) name:UIApplicationWillEnterForegroundNotification object:nil];
-    
+    }    
 }
-
-- (void) onPause {
-    NSLog(@"UIApplicationWillResignActiveNotification");
-    [DonkyPlugin notify: @"AppBackgrounded" withData: nil];
-}
-
-- (void) onResume {
-    NSLog(@"UIApplicationDidBecomeActiveNotification");
-    [DonkyPlugin notify: @"AppForegrounded" withData: nil];
-}
-
-
 
 - (NSString*)modelVersion
 {

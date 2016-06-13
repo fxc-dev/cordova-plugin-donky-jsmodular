@@ -45,7 +45,13 @@ public class GCMIntentService extends GcmListenerService implements PushConstant
 
         if (extras != null) {
 
-            if(DonkyPlugin.isInForeground()){
+            Boolean isInForeground = DonkyPlugin.isInForeground();
+            Boolean isActive = DonkyPlugin.isActive(); 
+
+            extras.putString("isInForeground", isInForeground ? "Yes" : "No");
+            extras.putString("isActive", isActive ? "Yes" : "No");
+
+            if(isInForeground){
 
                 DonkyPlugin.sendExtras(extras);
 

@@ -94,40 +94,77 @@ function DonkyPlugin(){
     }         
 
     /**
+     * There are two  properties in the bundle  to use to map to applicationState ...
+     * 1) result.additionalData.isInForeground ("Yes" | "No") (is app in BG or FG)
+     * 2) result.additionalData.isActive ("Yes" | "No") - (is the app even running)
+
+        var AppStates = {
+            active: 0,
+            inactive: 1,
+            background: 2       
+        }; 
+     */ 
+    function mapAndroidAppState(bundle){
+
+        var applicationState = AppStates.inactive;
+
+        if(bundle.isActive === "Yes"){
+
+            if(bundle.isInForeground === "Yes"){
+                applicationState = AppStates.active;
+            }else{
+                applicationState = AppStates.background;
+            }
+        }
+
+        return applicationState;
+    }
+
+    /**
      *
      */                
     function procesGCMPushMessage(result){
-                                    
-        var notificationId = result.additionalData.notificationId;
-                                                
-        // need to synthesise a server notification so we can call _processServerNotifications() if neessary ...                    
-        var notification = {
-            id: notificationId,
-            type: result.additionalData.notificationType,
-            data: result.additionalData.payload,
-            // TODO: get from GCM payload
-            createdOn: result.additionalData.notificationCreatedOn ? result.additionalData.notificationCreatedOn : new Date().toISOString()
-        };
+
+        var applicationState = mapAndroidAppState(result.additionalData);
         
-        // Is this a button click                                        
-        if(result.additionalData.ButtonClicked){
-            
-            pluginLog("procesGCMPushMessage: ButtonClicked=" + result.additionalData.ButtonClicked);
-            
-            donkyCore.addNotificationToRecentCache(notificationId);
-            // used to calculate stats
-            notification.displayed = new Date().valueOf();
-            // this will mark as received and fire a local event so not sure I want to add in like this ...
-            // flag to not publish a local event !!!                            
-
-            donkyPushLogic.processPushMessage(notification, false);
-
-            donkyPushLogic.setSimplePushResult(notification.id, result.additionalData.ButtonClicked);
-            
-        }else{
-            // TODO: need to apply more logic than this ...
-            donkyCore._processServerNotifications([notification]);                        
+        if(self.applicationStateOnPush === undefined){
+            self.applicationStateOnPush = applicationState;                    
         }
+
+        var notificationId = result.additionalData.notificationId;
+
+        if(!donkyCore.findNotificationInRecentCache(notificationId)){
+            // need to synthesise a server notification so we can call _processServerNotifications() if neessary ...                    
+            var notification = {
+                id: notificationId,
+                type: result.additionalData.notificationType,
+                data: result.additionalData.payload,
+                createdOn: result.additionalData.notificationCreatedOn ? result.additionalData.notificationCreatedOn : new Date().toISOString()
+            };
+            
+            // Is this a button click                                        
+            if(result.additionalData.ButtonClicked){
+                
+                pluginLog("procesGCMPushMessage: ButtonClicked=" + result.additionalData.ButtonClicked);
+                
+                donkyCore.addNotificationToRecentCache(notificationId);
+                // used to calculate stats
+                notification.displayed = new Date().valueOf();
+                // this will mark as received and fire a local event so not sure I want to add in like this ...
+                // flag to not publish a local event !!!                            
+
+                donkyPushLogic.processPushMessage(notification, false);
+
+                donkyPushLogic.setSimplePushResult(notification.id, result.additionalData.ButtonClicked);
+                
+            }else{
+                if( result.additionalData.notificationType === "SimplePushMessage" && applicationState !== AppStates.active){
+                    donkyCore.addNotificationToRecentCache(notification.id);
+                }else{
+                    donkyCore._processServerNotifications([notification]);    
+                }                                     
+            }
+        }                              
     }     
 
     /**
@@ -138,13 +175,11 @@ function DonkyPlugin(){
         if(self.applicationStateOnPush === undefined){
             self.applicationStateOnPush = applicationState;                    
         }
-                                                                                        
-        donkyCore.donkyNetwork.getServerNotification(notificationId, function(notification){
 
-            if(notification){                            
-                // Haver we already processed this ? doubt it ....
-                if(!donkyCore.findNotificationInRecentCache(notification.id)){
-                    
+        if(!donkyCore.findNotificationInRecentCache(notificationId)){
+            donkyCore.donkyNetwork.getServerNotification(notificationId, function(notification){
+
+                if(notification){                                                    
                     // need to handle the case when a push message has been received when the app was not active (and noty display it again)                                                                              
                     if( notification.type === "SimplePushMessage" && applicationState !== AppStates.active){
                         donkyCore.addNotificationToRecentCache(notification.id);
@@ -155,36 +190,34 @@ function DonkyPlugin(){
                     if(notification.type === "SimplePushMessage" || notification.type === "RichMessage"){
                         syncBadgeCount();
                     }                                                                                          
-                }                            
-            }                                                
-        });
+                }                                                
+            });        
+        }
     }
 
     /**
      * 
      */
     function subscribeToDonkyEvents(){
-        /**
-        *
-        */            
-        donkyCore.subscribeToLocalEvent("AppBackgrounded", function(event) {
+
+        document.addEventListener("pause", function(){
             // queue an AppSession 
             queueAppSession();
-        });        
-        
+        }, false);
+                
         /**
         * Need to determine whether app was foregrounded / launched due to a push or just opened.
-        * Foreground event comes in before push event (which contains app state) 
+        * Foreground event comes in before push event (which contains app state) - hence the setTimeout() usage 
         */            
-        donkyCore.subscribeToLocalEvent("AppForegrounded", function(event) {
+        document.addEventListener("resume", function(){
             self.launchTimeUtc = new Date().toISOString();
 
             setTimeout(function(){
                 queueAppLaunch();
             },1000);
-                                
-        });        
+        }, false);
 
+    
         /**
          * 
          */
