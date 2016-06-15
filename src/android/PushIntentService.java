@@ -4,6 +4,7 @@ import android.app.IntentService;
 import android.app.NotificationManager;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.util.Log;
@@ -48,9 +49,23 @@ public class PushIntentService extends IntentService implements PushConstants{
 
                 Log.v(LOG_TAG, ACTION_CANCEL_NOTIFICATION);
 
-                // TODO: what to return to donky ?
-                //  - need to ensure we don't get this message again
-                // need to report the button click ...
+
+                SharedPreferences sharedPref = getApplicationContext().getSharedPreferences(COM_DONKY_PLUGIN, Context.MODE_PRIVATE);
+
+                String dismissedNotifications = sharedPref.getString("dismissedNotifications", "");
+
+                String notificationId = (String) originalExtras.get("notificationId");
+
+                dismissedNotifications += notificationId + ",";
+
+                SharedPreferences.Editor editor = sharedPref.edit();
+
+                editor.putString("dismissedNotifications", dismissedNotifications);
+
+                editor.commit();
+
+
+
             }
             else if(ACTION_OPEN_APPLICATION.equals(intent.getAction())){
 

@@ -110,22 +110,33 @@ public class DonkyPlugin extends CordovaPlugin implements PushConstants{
 
         if (action.equals("getPlatformInfo")) {
 
-            JSONObject platfornInfo = new JSONObject();
+            JSONObject platformInfo = new JSONObject();
 
-            platfornInfo.put("deviceId", getUuid());
-            platfornInfo.put("platform", "Android");
-            platfornInfo.put("manufacturer", android.os.Build.MANUFACTURER);
-            platfornInfo.put("model", android.os.Build.MODEL);
-            platfornInfo.put("version", android.os.Build.VERSION.RELEASE);
+            platformInfo.put("deviceId", getUuid());
+            platformInfo.put("platform", "Android");
+            platformInfo.put("manufacturer", android.os.Build.MANUFACTURER);
+            platformInfo.put("model", android.os.Build.MODEL);
+            platformInfo.put("version", android.os.Build.VERSION.RELEASE);
+            
+            SharedPreferences sharedPref = getApplicationContext().getSharedPreferences(COM_DONKY_PLUGIN, Context.MODE_PRIVATE);
+            String dismissedNotifications = sharedPref.getString("dismissedNotifications", "");
+
+            platformInfo.put("dismissedNotifications", dismissedNotifications );
+
+            SharedPreferences.Editor editor = sharedPref.edit();
+
+            editor.putString("dismissedNotifications", "");
+
+            editor.commit();
 
             TimeZone tz = TimeZone.getTimeZone("UTC");
             DateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mmZ");
             df.setTimeZone(tz);
             String nowAsISO = df.format(new Date());
 
-            platfornInfo.put("launchTimeUtc", nowAsISO);
+            platformInfo.put("launchTimeUtc", nowAsISO);
 
-            callbackContext.success(platfornInfo);
+            callbackContext.success(platformInfo);
             return true;
         }
         else if(action.equals("setPushOptions")){

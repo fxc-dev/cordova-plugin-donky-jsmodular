@@ -73,6 +73,14 @@ static UIWebView* webView;
     [devProps setObject:[[NSBundle mainBundle] bundleIdentifier] forKey:@"bundleId"];
     [devProps setObject:deviceId forKey:@"deviceId"];
     
+    NSString * dismissedNotifications = [[NSUserDefaults standardUserDefaults] stringForKey:@"dismissedNotifications"];
+    
+    [devProps setObject:dismissedNotifications != nil ? dismissedNotifications : @"" forKey:@"dismissedNotifications"];
+    
+    [[NSUserDefaults standardUserDefaults] setObject:@"" forKey:@"dismissedNotifications"];
+    [[NSUserDefaults standardUserDefaults] synchronize];
+
+    
 #if _SWIZZLED_INIT_
     [devProps setObject:[NSNumber numberWithBool:[self coldstart]] forKey:@"coldstart"];
 #endif

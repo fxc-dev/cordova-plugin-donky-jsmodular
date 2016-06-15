@@ -168,9 +168,54 @@ static char coldstartKey;
     UIApplicationState state =[[UIApplication sharedApplication] applicationState];
     
     NSDictionary *dict = [[NSDictionary alloc] initWithObjectsAndKeys: identifier, @"identifier", userInfo, @"userInfo", @(state), @"applicationState", nil];
+    
 
-    if([[UIApplication sharedApplication] applicationState] == UIApplicationStateInactive){
-        //TODO: store somewhere that the plugin can access in pluginInitialize - it can then the client
+    if([[UIApplication sharedApplication] applicationState] != UIApplicationStateActive){
+
+        NSString* clickAction;
+        
+        NSString *inttype = [userInfo objectForKey:@"inttype"];
+        
+        if([inttype isEqualToString:@"TwoButton"])
+        {
+            NSString *act1 = [userInfo objectForKey:@"act1"];
+            NSString *act2 = [userInfo objectForKey:@"act2"];
+            
+            NSString *lbl1 =[userInfo objectForKey:@"lbl1"];
+            NSString *lbl2 = [userInfo objectForKey:@"lbl2"];
+            
+            if([identifier isEqualToString:lbl1]){
+                // button 1 clicked
+                NSLog(@"%@ => %@", lbl1, act1);
+                clickAction = act1;
+                
+            }else{
+                // button 2 clicked
+                NSLog(@"%@ => %@", lbl2, act2);
+                clickAction = act2;
+            }
+        }
+        
+        // If a dismiss button is clicked (can be either button), need to add to dismissedNotifications and pass back during initialisatiom so client can
+        // ignore the notification when syncing ...
+        if([clickAction isEqualToString:@"Dismissed"])
+        {
+            NSString *savedDismissedNotifications = [[NSUserDefaults standardUserDefaults] stringForKey:@"dismissedNotifications"];
+            
+            NSString *notificationId = [userInfo objectForKey:@"notificationId"];
+            
+            NSString *valueToSave;
+            
+            if(savedDismissedNotifications!=nil){
+                valueToSave = [NSString stringWithFormat:@"%@%@,", savedDismissedNotifications, notificationId];
+            }else{
+                valueToSave = [NSString stringWithFormat:@"%@,", notificationId];
+            }
+            
+            [[NSUserDefaults standardUserDefaults] setObject:valueToSave forKey:@"dismissedNotifications"];
+            [[NSUserDefaults standardUserDefaults] synchronize];
+        }
+        
     }
     
     [DonkyPlugin notify: @"handleButtonAction" withData: dict];

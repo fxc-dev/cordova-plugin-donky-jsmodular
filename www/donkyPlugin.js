@@ -65,7 +65,7 @@ function DonkyPlugin(){
             Type: "AppSession",
             "startTimeUtc": self.launchTimeUtc,
             "endTimeUtc": new Date().toISOString(),
-            "operatingSystem": donkyCore.donkyAccount.getOperatingSystem(),
+            "operatingSystem": donkyCore.donkyAccount._getOperatingSystem(),
             "sessionTrigger" : (self.applicationStateOnPush !== undefined && self.applicationStateOnPush !== AppStates.active) ? "Notification" : "None"
         };
         
@@ -84,7 +84,7 @@ function DonkyPlugin(){
         var launchClientNotification = {
             Type: "AppLaunch",
             "launchTimeUtc": self.launchTimeUtc,
-            "operatingSystem": donkyCore.donkyAccount.getOperatingSystem(),
+            "operatingSystem": donkyCore.donkyAccount._getOperatingSystem(),
             "sessionTrigger" : (self.applicationStateOnPush !== undefined && self.applicationStateOnPush !== AppStates.active) ? "Notification" : "None"
         };
 
@@ -160,6 +160,8 @@ function DonkyPlugin(){
             }else{
                 if( result.additionalData.notificationType === "SimplePushMessage" && applicationState !== AppStates.active){
                     donkyCore.addNotificationToRecentCache(notification.id);
+                    // TODO: need to TEST this ...
+                    donkyCore._queueAcknowledgement(notification, "Delivered");
                 }else{
                     donkyCore._processServerNotifications([notification]);    
                 }                                     
@@ -176,13 +178,16 @@ function DonkyPlugin(){
             self.applicationStateOnPush = applicationState;                    
         }
 
-        if(!donkyCore.findNotificationInRecentCache(notificationId)){
-            donkyCore.donkyNetwork.getServerNotification(notificationId, function(notification){
+        donkyCore.donkyNetwork.getServerNotification(notificationId, function(notification){
 
-                if(notification){                                                    
+            if(notification){
+
+                if(!donkyCore.findNotificationInRecentCache(notificationId)){
                     // need to handle the case when a push message has been received when the app was not active (and noty display it again)                                                                              
                     if( notification.type === "SimplePushMessage" && applicationState !== AppStates.active){
                         donkyCore.addNotificationToRecentCache(notification.id);
+                        // TODO: need to TEST this ...
+                        donkyCore._queueAcknowledgement(notification, "Delivered");                            
                     }else{
                         donkyCore._processServerNotifications([notification]);    
                     }
@@ -190,9 +195,9 @@ function DonkyPlugin(){
                     if(notification.type === "SimplePushMessage" || notification.type === "RichMessage"){
                         syncBadgeCount();
                     }                                                                                          
-                }                                                
-            });        
-        }
+                }
+            }                                                
+        });        
     }
 
     /**
@@ -333,6 +338,17 @@ function DonkyPlugin(){
 
     }
 
+    function processDismissedNotifications(notifications){
+        if(notifications && notifications !== ""){
+
+            var existing = JSON.parse(localStorage.getItem("dismissedNotificationIds"));
+
+            var additional = notifications.split(",").filter(function(el) {return el.length !== 0}); 
+
+            localStorage.setItem("dismissedNotificationIds", JSON.stringify(existing !==null ? existing.concat(additional) : additional));
+        }
+    }
+
     /**
      * 
      */    
@@ -353,13 +369,16 @@ function DonkyPlugin(){
             self.bundleId = info.bundleId;
             self.deviceId = info.deviceId;
             self.launchTimeUtc = info.launchTimeUtc;
+            
+            processDismissedNotifications(info.dismissedNotifications);
 
-            // set this so it can safely be picked up in donkyAccount 
-
+            // Set this so it can safely be picked up in donkyAccount on registration 
+            // NOTE: this only gets looked at in donkyCore.donkyAccount._register
             window.donkyDeviceOverrides = {
                 operatingSystem: self.platform,
                 deviceId: self.deviceId
             };
+
                 
             // These need to be available ... (integrators responsibility to load)        
             // TODO: race condition spotted using raw cordova when referring to js files on a CDN on first install
@@ -367,6 +386,14 @@ function DonkyPlugin(){
             // net effect of this is the device gets registered as "Web"
 
             if(window.donkyCore){
+
+                // These need to be set BEFORE integrator calls  calls donkyCore.initialise() - hence it is occurring in  onCordovaReady callback
+                // >>>
+                // shall I sniff donkyDeviceOverrides in initialise ?
+                // or shall I fire an event pluginReady ?
+                // <<<
+                donkyCore.donkyAccount._setOperatingSystem(self.platform);
+                donkyCore.donkyAccount._setDeviceId(self.deviceId);
 
                 if(window.DonkyInitialised === true){
                     
