@@ -170,6 +170,25 @@ static char coldstartKey;
     NSDictionary *dict = [[NSDictionary alloc] initWithObjectsAndKeys: identifier, @"identifier", userInfo, @"userInfo", @(state), @"applicationState", nil];
     
 
+    /**
+     * Need 3 different behaviours here
+     */
+    
+    switch([[UIApplication sharedApplication] applicationState]){
+        case UIApplicationStateActive:
+            break;
+
+        case UIApplicationStateInactive:
+            // dismissedNotifications can be passed back when init is called
+            break;
+        
+        case UIApplicationStateBackground:
+            // dismissedNotifications can be passed when app resumes ?
+            // not sure I need to do anything here as the JS handleButtonAction code simply sends the analytics result (doesn't display anything)
+            break;
+    }
+
+    
     if([[UIApplication sharedApplication] applicationState] != UIApplicationStateActive){
 
         NSString* clickAction;
@@ -198,7 +217,7 @@ static char coldstartKey;
         
         // If a dismiss button is clicked (can be either button), need to add to dismissedNotifications and pass back during initialisatiom so client can
         // ignore the notification when syncing ...
-        if([clickAction isEqualToString:@"Dismissed"])
+        if([clickAction isEqualToString:@"Dismiss"])
         {
             NSString *savedDismissedNotifications = [[NSUserDefaults standardUserDefaults] stringForKey:@"dismissedNotifications"];
             
@@ -217,6 +236,8 @@ static char coldstartKey;
         }
         
     }
+    
+    // NOTE: if I call this when the app is in state UIApplicationStateBackground, it fires when resumed ...
     
     [DonkyPlugin notify: @"handleButtonAction" withData: dict];
     completionHandler(UIBackgroundFetchResultNewData);

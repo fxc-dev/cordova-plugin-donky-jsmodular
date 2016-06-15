@@ -62,7 +62,25 @@ public class GCMIntentService extends GcmListenerService implements PushConstant
         }
     }
 
-    private PendingIntent getPendingIntentForAction(int notificationId, Bundle extras, JSONObject buttonSetAction) {
+    private PendingIntent getPendingIntentForRichMessage(int notificationId, Bundle extras) {
+        Intent intent = new Intent(this, PushIntentService.class);
+
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.HONEYCOMB_MR1) {
+            intent.addFlags(Intent.FLAG_INCLUDE_STOPPED_PACKAGES);
+        }
+        
+        intent.putExtra(PUSH_BUNDLE, extras);
+        intent.putExtra(NOTIFICATION_ID, notificationId);
+
+        intent.putExtra("messageType", "Rich");
+
+        intent.setAction(PushIntentService.ACTION_OPEN_RICH_MESSAGE);
+        
+        return PendingIntent.getService(this.getApplicationContext(), new Random().nextInt(), intent, PendingIntent.FLAG_UPDATE_CURRENT );
+    }
+
+
+    private PendingIntent getPendingIntentForSimplePushAction(int notificationId, Bundle extras, JSONObject buttonSetAction) {
 
         Intent intent = new Intent(this, PushIntentService.class);
 
@@ -72,6 +90,8 @@ public class GCMIntentService extends GcmListenerService implements PushConstant
 
         intent.putExtra(PUSH_BUNDLE, extras);
         intent.putExtra(NOTIFICATION_ID, notificationId);
+
+        intent.putExtra("messageType", "SimplePush");
 
         if(buttonSetAction != null){
 
@@ -128,39 +148,52 @@ public class GCMIntentService extends GcmListenerService implements PushConstant
 
         Log.d(LOG_TAG, "payload = " + payload);
 
+        String messageType = "";
         String body = "";
         String senderDisplayName = "";
         String avatarAssetId = "";
         String interactionType = "";
+        Boolean canDisplay = false;
 
         JSONArray buttonSets = null;
         JSONArray buttonSetActions = null;
 
         try {
             JSONObject jsonObj = new JSONObject(payload);
-            body = jsonObj.optString("body");
+            messageType =jsonObj.optString("messageType");
+
             senderDisplayName = jsonObj.optString("senderDisplayName");
             avatarAssetId = jsonObj.optString("avatarAssetId", null);
 
-            buttonSets = jsonObj.optJSONArray("buttonSets");
+            if(messageType.equals("Rich")){
+                body = jsonObj.optString("description");
+                canDisplay = true;
+            }
+            else if(messageType.equals("SimplePush")){
+                body = jsonObj.optString("body");
 
-            if(buttonSets != null){
-                // need to search for JSONObject that has property platform: "Mobile"
+                buttonSets = jsonObj.optJSONArray("buttonSets");
 
-                for(int i = 0 ; i < buttonSets.length(); i++){
+                if(buttonSets != null){
+                    // need to search for JSONObject that has property platform: "Mobile"
 
-                    JSONObject buttonSet = buttonSets.getJSONObject(i);
+                    for(int i = 0 ; i < buttonSets.length(); i++){
 
-                    String platform = buttonSet.optString("platform");
+                        JSONObject buttonSet = buttonSets.getJSONObject(i);
 
-                    if(platform.equals("Mobile")){
+                        String platform = buttonSet.optString("platform");
 
-                        interactionType = buttonSet.optString("interactionType");
+                        if(platform.equals("Mobile")){
 
-                        buttonSetActions = buttonSet.optJSONArray("buttonSetActions");
+                            interactionType = buttonSet.optString("interactionType");
 
+                            buttonSetActions = buttonSet.optJSONArray("buttonSetActions");
+
+                        }
                     }
                 }
+
+                canDisplay = true;
             }
 
         } catch (JSONException e) {
@@ -170,91 +203,111 @@ public class GCMIntentService extends GcmListenerService implements PushConstant
         Log.d(LOG_TAG, "body = " + body);
         Log.d(LOG_TAG, "senderDisplayName = " + senderDisplayName);
 
-        NotificationManager mNotificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-        String appName = (String) context.getPackageManager().getApplicationLabel(context.getApplicationInfo());
+        if(canDisplay){
 
-        // one button
+            NotificationManager mNotificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+            String appName = (String) context.getPackageManager().getApplicationLabel(context.getApplicationInfo());
 
-        JSONObject buttonSetActionForOneButton = null;
+            NotificationCompat.Builder mBuilder =
+                    new NotificationCompat.Builder(context)
+                            .setWhen(System.currentTimeMillis())
+                            .setContentTitle(senderDisplayName)
+                            .setTicker(senderDisplayName);
 
-        if(interactionType.equals("OneButton")){
-
-            try {
-                buttonSetActionForOneButton = buttonSetActions.getJSONObject(0);
-            } catch (JSONException e) {
-                e.printStackTrace();
+            // generic stuff ...
+            if(vibrate){
+                mBuilder.setDefaults(Notification.DEFAULT_VIBRATE);
             }
-        }
 
-        PendingIntent contentIntent = getPendingIntentForAction( notificationId, extras, buttonSetActionForOneButton );
-
-        NotificationCompat.Builder mBuilder =
-                new NotificationCompat.Builder(context)
-                        .setWhen(System.currentTimeMillis())
-                        .setContentTitle(senderDisplayName)
-                        .setTicker(senderDisplayName)
-                        .setContentIntent(contentIntent);
-
-        if(vibrate){
-            mBuilder.setDefaults(Notification.DEFAULT_VIBRATE);
-        }
-
-        int iconId = 0;
-        if (icon != null && !"".equals(icon)) {
-            iconId = resources.getIdentifier(icon, DRAWABLE, context.getPackageName());
-            Log.d(LOG_TAG, "using icon from plugin options");
-        }
-        if (iconId == 0) {
-            Log.d(LOG_TAG, "no icon resource found - using application icon");
-            iconId = context.getApplicationInfo().icon;
-        }
-        mBuilder.setSmallIcon(iconId);
-
-        int _iconColor = 0;
-        if (iconColor != null && !"".equals(iconColor)) {
-            try {
-                _iconColor = Color.parseColor(iconColor);
-            } catch (IllegalArgumentException e) {
-                Log.e(LOG_TAG, "couldn't parse color from android options");
+            int iconId = 0;
+            if (icon != null && !"".equals(icon)) {
+                iconId = resources.getIdentifier(icon, DRAWABLE, context.getPackageName());
+                Log.d(LOG_TAG, "using icon from plugin options");
             }
-        }
-        if (_iconColor != 0) {
-            mBuilder.setColor(_iconColor);
-        }
+            if (iconId == 0) {
+                Log.d(LOG_TAG, "no icon resource found - using application icon");
+                iconId = context.getApplicationInfo().icon;
+            }
+            mBuilder.setSmallIcon(iconId);
 
-        mBuilder.setSound(android.provider.Settings.System.DEFAULT_NOTIFICATION_URI);
+            int _iconColor = 0;
+            if (iconColor != null && !"".equals(iconColor)) {
+                try {
+                    _iconColor = Color.parseColor(iconColor);
+                } catch (IllegalArgumentException e) {
+                    Log.e(LOG_TAG, "couldn't parse color from android options");
+                }
+            }
+            if (_iconColor != 0) {
+                mBuilder.setColor(_iconColor);
+            }
 
-        mBuilder.setContentText(body);
+            mBuilder.setSound(android.provider.Settings.System.DEFAULT_NOTIFICATION_URI);
 
-        mBuilder.setNumber(0);
+            mBuilder.setContentText(body);
 
-        if(interactionType.equals("TwoButton")) {
-            try {
+            mBuilder.setNumber(0);
 
-                if(buttonSetActions!=null){
-                    for(int j = 0 ; j < buttonSetActions.length() ; j++){
+            if(avatarAssetId != ""){
+                mBuilder.setLargeIcon(getBitmapFromURL("https://" + environment + "client-api.mobiledonky.com/asset/" + avatarAssetId));
+            }
+            
 
-                        JSONObject buttonSetAction = buttonSetActions.getJSONObject(j);
+            // message type specifics ...
 
-                        String label = buttonSetAction.optString("label");
+            if(messageType.equals("SimplePush")){
 
-                        PendingIntent actionIntent = getPendingIntentForAction( notificationId, extras, buttonSetAction );
+                // one button ?
 
-                        mBuilder.addAction(android.R.color.transparent, label, actionIntent);
+                JSONObject buttonSetActionForOneButton = null;
 
+                if(interactionType.equals("OneButton")){
+
+                    try {
+                        buttonSetActionForOneButton = buttonSetActions.getJSONObject(0);
+                    } catch (JSONException e) {
+                        e.printStackTrace();
                     }
                 }
 
-            } catch (JSONException e) {
-                e.printStackTrace();
+                PendingIntent contentIntent = getPendingIntentForSimplePushAction( notificationId, extras, buttonSetActionForOneButton );
+
+                mBuilder.setContentIntent(contentIntent);
+
+                if(interactionType.equals("TwoButton")) {
+                    try {
+
+                        if(buttonSetActions!=null){
+                            for(int j = 0 ; j < buttonSetActions.length() ; j++){
+
+                                JSONObject buttonSetAction = buttonSetActions.getJSONObject(j);
+
+                                String label = buttonSetAction.optString("label");
+
+                                PendingIntent actionIntent = getPendingIntentForSimplePushAction( notificationId, extras, buttonSetAction );
+
+                                mBuilder.addAction(android.R.color.transparent, label, actionIntent);
+
+                            }
+                        }
+
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                    }
+                }
+
+
+            }else if(messageType.equals("Rich")){
+
+                PendingIntent contentIntent = getPendingIntentForRichMessage( notificationId, extras );
+
+                mBuilder.setContentIntent(contentIntent);
+
             }
+
+            mNotificationManager.notify(notificationId, mBuilder.build());
         }
 
-        if(avatarAssetId != ""){
-            mBuilder.setLargeIcon(getBitmapFromURL("https://" + environment + "client-api.mobiledonky.com/asset/" + avatarAssetId));
-        }
-
-        mNotificationManager.notify(notificationId, mBuilder.build());
     }
 
 

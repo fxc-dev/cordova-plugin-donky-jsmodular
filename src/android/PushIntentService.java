@@ -28,6 +28,11 @@ public class PushIntentService extends IntentService implements PushConstants{
      */
     static final String ACTION_OPEN_DEEP_LINK = "com.donky.plugin.DEEP_LINK";
 
+    /**
+     * Action name of intent. Notification described in intent should be open rich message.
+     */
+    static final String ACTION_OPEN_RICH_MESSAGE = "com.donky.plugin.RICH_MESSAGE";
+
 
     public PushIntentService() {
         super("PushIntentService");
@@ -40,15 +45,16 @@ public class PushIntentService extends IntentService implements PushConstants{
 
         if (extras != null) {
             Bundle originalExtras = extras.getBundle(PUSH_BUNDLE);
+            
+            String messageType = (String) originalExtras.get("messageType");
 
-
-            // ws it a button click ? if so, handleButtonAction
-
+            if( messageType.equals("SimplePush") ){
+                originalExtras.putString("ButtonClicked", extras.getString("ButtonLabel"));
+            }
 
             if (ACTION_CANCEL_NOTIFICATION.equals(intent.getAction())){
 
                 Log.v(LOG_TAG, ACTION_CANCEL_NOTIFICATION);
-
 
                 SharedPreferences sharedPref = getApplicationContext().getSharedPreferences(COM_DONKY_PLUGIN, Context.MODE_PRIVATE);
 
@@ -63,9 +69,6 @@ public class PushIntentService extends IntentService implements PushConstants{
                 editor.putString("dismissedNotifications", dismissedNotifications);
 
                 editor.commit();
-
-
-
             }
             else if(ACTION_OPEN_APPLICATION.equals(intent.getAction())){
 
@@ -87,8 +90,18 @@ public class PushIntentService extends IntentService implements PushConstants{
                 Log.d(LOG_TAG, "DeepLinkData = " + deepLinkData);
 
             }
+            else if(ACTION_OPEN_RICH_MESSAGE.equals(intent.getAction())){
+                Log.v(LOG_TAG, ACTION_OPEN_RICH_MESSAGE);
 
-            originalExtras.putString("ButtonClicked", extras.getString("ButtonLabel"));
+                // TODO: what to return to donky ?
+
+
+                PackageManager pm = getPackageManager();
+                Intent launchIntent = pm.getLaunchIntentForPackage(getApplicationContext().getPackageName());
+                startActivity(launchIntent);
+            }
+
+
             DonkyPlugin.sendExtras(originalExtras);
         }
 

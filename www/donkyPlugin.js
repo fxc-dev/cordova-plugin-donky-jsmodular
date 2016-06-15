@@ -244,30 +244,35 @@ function DonkyPlugin(){
         donkyCore.subscribeToLocalEvent("handleButtonAction", function (event) {
             pluginLog("handleButtonAction", JSON.stringify(event.data, null, 4));
             
-            // If SDK not initialised, we can't make rest calls (even if we have a token)  should I change this ?
-            
-            var buttonText = event.data.identifier;
-            var notificationId = event.data.userInfo.notificationId;
-            donkyCore.addNotificationToRecentCache(notificationId);
-                                
-            donkyCore.donkyNetwork.getServerNotification(notificationId, function(notification){
-                if(notification){
-                    
-                    switch(notification.type){
-                        case "SimplePushMessage":
-                            if(window.donkyPushLogic){
+            // If SDK not initialised, we can't make rest calls (even if we have a token)  should I change this ?            
+            if(donkyCore.isInitialised()){
 
-                                notification.displayed = new Date().valueOf();
-                                // this will mark as received and fire a local event so not sure I want to add in like this ...
-                                // flag to not publish a local event !!!                            
-                                donkyPushLogic.processPushMessage(notification, false);
-                                // this will delete the message                                                    
-                                donkyPushLogic.setSimplePushResult(notification.id, buttonText);
-                            }                                                        
-                        break;
-                    }                                                       
-                }
-            });
+                var buttonText = event.data.identifier;
+                var notificationId = event.data.userInfo.notificationId;
+                donkyCore.addNotificationToRecentCache(notificationId);
+                                    
+                donkyCore.donkyNetwork.getServerNotification(notificationId, function(notification){
+                    if(notification){
+                        
+                        switch(notification.type){
+                            case "SimplePushMessage":
+                                if(window.donkyPushLogic){
+
+                                    notification.displayed = new Date().valueOf();
+                                    // this will mark as received and fire a local event so not sure I want to add in like this ...
+                                    // flag to not publish a local event !!!                            
+                                    donkyPushLogic.processPushMessage(notification, false);
+                                    // this will delete the message                                                    
+                                    donkyPushLogic.setSimplePushResult(notification.id, buttonText);
+                                }                                                        
+                            break;
+                        }                                                       
+                    }
+                });
+                
+            }else{
+                pluginError("handleButtonAction() called when not initialised");
+            }
             
         });     
     }
@@ -355,7 +360,7 @@ function DonkyPlugin(){
     channel.onCordovaReady.subscribe(function() {
         pluginLog("onCordovaReady");
         
-        self.getPlatformInfo(function(info){
+        cordova.exec(function(info){
 
             pluginLog("getPlatformInfo() succeeed: " + JSON.stringify(info));
 
@@ -453,7 +458,8 @@ function DonkyPlugin(){
         },function(e){
             self.available = false;
             pluginError("[ERROR] Error initializing donkyPlugin: " + e);            
-        });
+        },
+        "donky", "init", []);
     });
 }
 
@@ -479,17 +485,11 @@ function DonkyPlugin(){
 DonkyPlugin.prototype.callback = function(eventName, eventData){                
     if(window.donkyCore){        
         donkyCore.publishLocalEvent({ type: eventName, data: eventData });            
+    }else{
+        pluginError("callback(" + eventName + ") : window.donkyCore not set" );
     }                   
 }
 
-/**
- * Method to query platform related info - intenal (executed on onCordovaReady)
- * @param {Callback} successCallback - callback to call if method was succsful with the deviceId
- * @param {Callback} errorCallback - callback to call if method failed with the error messag
- */
-DonkyPlugin.prototype.getPlatformInfo = function(successCallback, errorCallback){
-    cordova.exec(successCallback, errorCallback, "donky", "getPlatformInfo",[]);        
-}
 
 /**
  * Method to register for push notifications

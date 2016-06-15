@@ -108,7 +108,7 @@ public class DonkyPlugin extends CordovaPlugin implements PushConstants{
         Log.v(LOG_TAG, "execute: action=" + action);
         gWebView = this.webView;
 
-        if (action.equals("getPlatformInfo")) {
+        if (action.equals("init")) {
 
             JSONObject platformInfo = new JSONObject();
 
@@ -172,8 +172,6 @@ public class DonkyPlugin extends CordovaPlugin implements PushConstants{
             return true;
         }
         else if(action.equals("registerForPush")){
-
-
 
             cordova.getThreadPool().execute(new Runnable() {
                 public void run() {
