@@ -216,9 +216,17 @@ function DonkyPlugin(){
      */
     function subscribeToDonkyEvents(){
 
+
         document.addEventListener("pause", function(){
             // queue an AppSession 
             queueAppSession();
+
+            if(donkyCore.donkyNetwork._usingSignalR()){
+                donkyCore.donkyNetwork._stopSignalR(function(){
+                    pluginLog("signalR stopped");
+                });
+            }
+
         }, false);
                 
         /**
@@ -227,6 +235,12 @@ function DonkyPlugin(){
         */            
         document.addEventListener("resume", function(){
             self.launchTimeUtc = new Date().toISOString();
+
+            if(donkyCore.donkyNetwork._usingSignalR()){
+                donkyCore.donkyNetwork._startSignalR(function(){
+                    pluginLog("signalR started");
+                });
+            }
 
             setTimeout(function(){
                 queueAppLaunch();
@@ -361,7 +375,18 @@ function DonkyPlugin(){
 
             var additional = notifications.split(",").filter(function(el) {return el.length !== 0}); 
 
-            localStorage.setItem("dismissedNotificationIds", JSON.stringify(existing !==null ? existing.concat(additional) : additional));
+            var dismissed = existing !==null ? existing.concat(additional) : additional;
+
+            if(window.donkyCore){
+                donkyCore._each(dismissed, function(index, notificationId){
+                    donkyCore.addNotificationToRecentCache(notificationId);
+                });
+                localStorage.removeItem("dismissedNotificationIds");
+            }else{
+                pluginError("processDismissedNotifications - no donkyCore");
+                // set them for next time ?
+                localStorage.setItem("dismissedNotificationIds", JSON.stringify(dismissed));
+            }
         }
     }
 
