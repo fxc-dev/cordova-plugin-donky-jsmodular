@@ -45,20 +45,34 @@ public class GCMIntentService extends GcmListenerService implements PushConstant
 
         if (extras != null) {
 
-            Boolean isInForeground = DonkyPlugin.isInForeground();
-            Boolean isActive = DonkyPlugin.isActive(); 
+            String type = extras.getString("type", "");
+            String notificationType = extras.getString("notificationType", "");
 
-            extras.putString("isInForeground", isInForeground ? "Yes" : "No");
-            extras.putString("isActive", isActive ? "Yes" : "No");
+            Log.d(LOG_TAG, "type: " + type + ", notificationType: " + notificationType);
 
-            if(isInForeground){
+            if( type.equals("DonkyMessage")) {
+                Log.d(LOG_TAG, "DonkyMessage");
 
-                DonkyPlugin.sendExtras(extras);
+                Boolean isInForeground = DonkyPlugin.isInForeground();
+                Boolean isActive = DonkyPlugin.isActive();
 
-            }else{
-                createNotification(getApplicationContext(), extras);
+                extras.putString("isInForeground", isInForeground ? "Yes" : "No");
+                extras.putString("isActive", isActive ? "Yes" : "No");
+
+                if(isInForeground){
+
+                    DonkyPlugin.sendExtras(extras);
+
+                }else{
+                    createNotification(getApplicationContext(), extras);
+                }
             }
-
+            else if(type.equals("DonkyRichMessagePart")){
+                Log.d(LOG_TAG, "DonkyRichMessagePart");
+            }
+            else{
+                Log.d(LOG_TAG, "Ignoring this push: " + type);
+            }
         }
     }
 
@@ -72,7 +86,8 @@ public class GCMIntentService extends GcmListenerService implements PushConstant
         intent.putExtra(PUSH_BUNDLE, extras);
         intent.putExtra(NOTIFICATION_ID, notificationId);
 
-        intent.putExtra("messageType", "Rich");
+        String notificationType = extras.getString("notificationType");
+        intent.putExtra("notificationType", notificationType);
 
         intent.setAction(PushIntentService.ACTION_OPEN_RICH_MESSAGE);
         
@@ -91,7 +106,8 @@ public class GCMIntentService extends GcmListenerService implements PushConstant
         intent.putExtra(PUSH_BUNDLE, extras);
         intent.putExtra(NOTIFICATION_ID, notificationId);
 
-        intent.putExtra("messageType", "SimplePush");
+        String notificationType = extras.getString("notificationType");
+        intent.putExtra("notificationType", notificationType);
 
         if(buttonSetAction != null){
 

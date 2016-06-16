@@ -45,10 +45,10 @@ public class PushIntentService extends IntentService implements PushConstants{
 
         if (extras != null) {
             Bundle originalExtras = extras.getBundle(PUSH_BUNDLE);
-            
-            String messageType = (String) originalExtras.get("messageType");
 
-            if( messageType.equals("SimplePush") ){
+            String notificationType = (String) extras.get("notificationType");
+
+            if( notificationType.equals("SimplePushMessage") ){
                 originalExtras.putString("ButtonClicked", extras.getString("ButtonLabel"));
             }
 

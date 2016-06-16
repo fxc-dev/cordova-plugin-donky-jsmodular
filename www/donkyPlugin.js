@@ -158,11 +158,22 @@ function DonkyPlugin(){
                 donkyPushLogic.setSimplePushResult(notification.id, result.additionalData.ButtonClicked);
                 
             }else{
+
                 if( result.additionalData.notificationType === "SimplePushMessage" && applicationState !== AppStates.active){
                     donkyCore.addNotificationToRecentCache(notification.id);
                     // TODO: need to TEST this ...
                     donkyCore._queueAcknowledgement(notification, "Delivered");
-                }else{
+                }
+                else if(result.additionalData.notificationType === "RichMessage"){
+
+                    // need to get the message as body not there yet ...
+                    donkyCore.donkyNetwork.getServerNotification(result.additionalData.notificationId, function(notification){                        
+                        if(notification){
+                            donkyCore._processServerNotifications([notification]);                            
+                        }
+                    });
+                }
+                else{
                     donkyCore._processServerNotifications([notification]);    
                 }                                     
             }
