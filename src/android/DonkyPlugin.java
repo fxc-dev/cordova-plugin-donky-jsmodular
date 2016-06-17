@@ -5,7 +5,12 @@ import org.apache.cordova.*;
 import org.json.JSONArray;
 import org.json.JSONException;
 
+import android.app.Activity;
+import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
+import android.content.pm.ResolveInfo;
+import android.net.Uri;
 import android.provider.Settings;
 import org.json.JSONObject;
 import android.content.Context;
@@ -23,6 +28,8 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 
 import com.google.android.gms.iid.InstanceID;
+
+import java.util.List;
 
 
 public class DonkyPlugin extends CordovaPlugin implements PushConstants{
@@ -171,6 +178,20 @@ public class DonkyPlugin extends CordovaPlugin implements PushConstants{
             callbackContext.success();
             return true;
         }
+        else if(action.equals("openDeepLink")){
+            String deepLink = data.getString(0);
+
+            Intent currentIntent = this.cordova.getActivity().getIntent();
+            Bundle extras = currentIntent.getExtras();
+
+            if( openDeepLink(getApplicationContext(), extras, deepLink) ){
+                callbackContext.success();
+            }else{
+                callbackContext.error("Could not find an intent that matched the link " + deepLink);
+            }
+
+            return true;
+        }
         else if(action.equals("registerForPush")){
 
             cordova.getThreadPool().execute(new Runnable() {
@@ -230,6 +251,52 @@ public class DonkyPlugin extends CordovaPlugin implements PushConstants{
             return false;
         }
     }
+
+
+
+    /**
+     * Check if there is Activity responding to an Intent.
+     *
+     * @param context Context
+     * @param intent Intent to check if any Activity responds to.
+     * @return True if Activity responds to an Intent.
+     */
+    public static boolean isActivityAvailable(Context context, Intent intent) {
+
+        final PackageManager mgr = context.getPackageManager();
+
+        List<ResolveInfo> list =
+                mgr.queryIntentActivities(intent,
+                        PackageManager.MATCH_DEFAULT_ONLY);
+
+        return list.size() > 0;
+
+    }
+
+    public static boolean openDeepLink(Context context, Bundle extras, String deepLink) {
+
+        Intent intent = new Intent();
+
+        if(extras!=null){
+            intent.putExtras(extras);
+        }
+
+        intent.setData(Uri.parse(deepLink));
+
+        intent.setAction(Intent.ACTION_VIEW);
+        intent.addCategory(Intent.CATEGORY_DEFAULT);
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+
+        if (isActivityAvailable(context, intent)) {
+            context.startActivity(intent);
+            return true;
+
+        }else{
+            Log.v(LOG_TAG, "Could not find an intent that matched the link " + deepLink);
+            return false;
+        }
+    }
+
 
     public static void sendEvent(JSONObject _json) {
 

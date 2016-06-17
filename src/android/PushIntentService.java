@@ -89,6 +89,7 @@ public class PushIntentService extends IntentService implements PushConstants{
                 String deepLinkData = extras.getString("DeepLinkData");
                 Log.d(LOG_TAG, "DeepLinkData = " + deepLinkData);
 
+                DonkyPlugin.openDeepLink(getApplicationContext(), originalExtras, deepLinkData);
             }
             else if(ACTION_OPEN_RICH_MESSAGE.equals(intent.getAction())){
                 Log.v(LOG_TAG, ACTION_OPEN_RICH_MESSAGE);

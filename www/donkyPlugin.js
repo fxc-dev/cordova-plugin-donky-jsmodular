@@ -512,8 +512,7 @@ function DonkyPlugin(){
  * 
  * 1) pushRegistrationSucceeded
  * 2) pushRegistrationFailed
- * 3) pushNotification
- * 4) handleButtonAction
+ * 3) handleButtonAction
  * 
  * @param  {String} eventName - the name of the event
  * @param  {Object} eventData - the object data associated with the event
