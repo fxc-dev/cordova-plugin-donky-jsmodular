@@ -189,11 +189,23 @@ static char coldstartKey;
     }
 
     
+    
+    
+    
+    
+
+    
+    
+    
     if([[UIApplication sharedApplication] applicationState] != UIApplicationStateActive){
 
-        NSString* clickAction;
+        NSString* action;
+        NSString* link;
+        NSString* label;
         
         NSString *inttype = [userInfo objectForKey:@"inttype"];
+        
+        NSString *notificationId = [userInfo objectForKey:@"notificationId"];
         
         if([inttype isEqualToString:@"TwoButton"])
         {
@@ -202,26 +214,59 @@ static char coldstartKey;
             
             NSString *lbl1 =[userInfo objectForKey:@"lbl1"];
             NSString *lbl2 = [userInfo objectForKey:@"lbl2"];
+
+            NSString *link1 =[userInfo objectForKey:@"link1"];
+            NSString *link2 = [userInfo objectForKey:@"link2"];
+            
             
             if([identifier isEqualToString:lbl1]){
                 // button 1 clicked
                 NSLog(@"%@ => %@", lbl1, act1);
-                clickAction = act1;
+                action = act1;
+                link = link1;
+                label = lbl1;
                 
             }else{
                 // button 2 clicked
                 NSLog(@"%@ => %@", lbl2, act2);
-                clickAction = act2;
+                action = act2;
+                link = link2;
+                label = lbl2;
             }
         }
         
+        
+        // Coldstart analytics ...
+        // if a button is clicked, how do we report analytics ?
+        // Can store notificationId, action, buttonText and handle in client
+        //  client can download the message
+        
+        // pipe separated JSON ?
+        // {"notificationId": "", "label": "dismiss", "action": "D"}|
+        
+        NSString *savedColdstartNotifications = [[NSUserDefaults standardUserDefaults] stringForKey:@"coldstartNotifications"];
+        
+        NSString *json = [NSString stringWithFormat:@"{\"notificationId\":\"%@\",\"label\":\"%@\",\"action\":\"%@\", \"clicked\":\"%@\"}", notificationId, label, action, [DonkyPlugin getCurrentTimestamp]];
+        
+        NSString *valueToSave;
+        
+        if(savedColdstartNotifications != nil && ![savedColdstartNotifications isEqualToString:@""]){
+            valueToSave = [NSString stringWithFormat:@"%@%@|", savedColdstartNotifications, json];
+        }else{
+            valueToSave = [NSString stringWithFormat:@"%@|", json];
+        }
+        
+        NSLog(@"coldstartNotifications: %@", valueToSave);
+
+        [[NSUserDefaults standardUserDefaults] setObject:valueToSave forKey:@"coldstartNotifications"];
+        [[NSUserDefaults standardUserDefaults] synchronize];
+        
+        
         // If a dismiss button is clicked (can be either button), need to add to dismissedNotifications and pass back during initialisatiom so client can
         // ignore the notification when syncing ...
-        if([clickAction isEqualToString:@"Dismiss"])
+        if([action isEqualToString:@"Dismiss"])
         {
             NSString *savedDismissedNotifications = [[NSUserDefaults standardUserDefaults] stringForKey:@"dismissedNotifications"];
-            
-            NSString *notificationId = [userInfo objectForKey:@"notificationId"];
             
             NSString *valueToSave;
             
@@ -234,12 +279,32 @@ static char coldstartKey;
             [[NSUserDefaults standardUserDefaults] setObject:valueToSave forKey:@"dismissedNotifications"];
             [[NSUserDefaults standardUserDefaults] synchronize];
         }
+        else if([action isEqualToString:@"DeepLink"]){
+        
+            // dismissedNotifications needs to be renamed to processedNotifications as we want the same behaviour for
+            
+            if(link != nil && ![link isKindOfClass:[NSNull class]])
+            {
+                NSURL *url = [NSURL URLWithString:link];
+                
+                [DonkyPlugin openDeepLink: url];
+            }
+            
+        }
+        else if([action isEqualToString:@"Open"]){
+        
+            // TODO:
+            
+        }
         
     }
     
     // NOTE: if I call this when the app is in state UIApplicationStateBackground, it fires when resumed ...
     
-    [DonkyPlugin notify: @"handleButtonAction" withData: dict];
+    if([[UIApplication sharedApplication] applicationState] != UIApplicationStateInactive){
+        [DonkyPlugin notify: @"handleButtonAction" withData: dict];
+    }
+
     completionHandler(UIBackgroundFetchResultNewData);
 }
 

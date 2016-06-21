@@ -49,6 +49,14 @@ static UIWebView* webView;
     return platform;
 }
 
++(NSString*) getCurrentTimestamp;
+{
+    NSDateFormatter* dateFormatter = [[NSDateFormatter alloc] init];
+    [dateFormatter setLocale:[NSLocale localeWithLocaleIdentifier:@"en_US_POSIX"]];
+    [dateFormatter setDateFormat:@"yyyy-MM-dd'T'HH:mm:ssZZZZZ"];
+    return [dateFormatter stringFromDate:[NSDate date]];
+}
+
 
 - (void)init:(CDVInvokedUrlCommand*)command
 {
@@ -79,6 +87,15 @@ static UIWebView* webView;
     
     [[NSUserDefaults standardUserDefaults] setObject:@"" forKey:@"dismissedNotifications"];
     [[NSUserDefaults standardUserDefaults] synchronize];
+    
+    NSString * coldstartNotifications = [[NSUserDefaults standardUserDefaults] stringForKey:@"coldstartNotifications"];
+    
+    NSLog(@"Setting coldstartNotifications to %@", coldstartNotifications);
+
+    [devProps setObject:coldstartNotifications != nil ? coldstartNotifications : @"" forKey:@"coldstartNotifications"];
+    
+    [[NSUserDefaults standardUserDefaults] setObject:@"" forKey:@"coldstartNotifications"];
+    [[NSUserDefaults standardUserDefaults] synchronize];
 
     
 #if _SWIZZLED_INIT_
@@ -88,7 +105,7 @@ static UIWebView* webView;
     NSDateFormatter* dateFormatter = [[NSDateFormatter alloc] init];
     [dateFormatter setLocale:[NSLocale localeWithLocaleIdentifier:@"en_US_POSIX"]];
     [dateFormatter setDateFormat:@"yyyy-MM-dd'T'HH:mm:ssZZZZZ"];
-    [devProps setObject:[dateFormatter stringFromDate:[NSDate date]] forKey:@"launchTimeUtc"];
+    [devProps setObject:[DonkyPlugin getCurrentTimestamp] forKey:@"launchTimeUtc"];
 
     CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:devProps];
 
@@ -213,9 +230,10 @@ static UIWebView* webView;
     if(linkValue != nil && ![linkValue isKindOfClass:[NSNull class]])
     {
         NSURL *url = [NSURL URLWithString:linkValue];
-        NSLog(@"handleDeepLink: Opening link: %@", linkValue);
         
-        pluginResult = [[UIApplication sharedApplication] openURL:url] ? [CDVPluginResult resultWithStatus:CDVCommandStatus_OK] : [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR];
+        Boolean opened = [DonkyPlugin openDeepLink: url];
+        
+        pluginResult = opened ? [CDVPluginResult resultWithStatus:CDVCommandStatus_OK] : [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR];
     }
     else
     {
@@ -223,6 +241,13 @@ static UIWebView* webView;
     }
     
     [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+}
+
++ (Boolean)openDeepLink:(NSURL*)url;
+{
+    NSLog(@"handleDeepLink: Opening link: %@", url);
+    
+    return [[UIApplication sharedApplication] openURL:url];
 }
 
 - (void) setPushOptions:(CDVInvokedUrlCommand*)command;

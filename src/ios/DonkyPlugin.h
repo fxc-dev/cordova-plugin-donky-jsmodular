@@ -12,6 +12,8 @@
 - (void) unregisterForPush:(CDVInvokedUrlCommand*)command;
 - (void) setBadgeCount:(CDVInvokedUrlCommand*)command; 
 - (void) openDeepLink:(CDVInvokedUrlCommand*)command;
++ (Boolean)openDeepLink:(NSURL*)url;
++ (NSString*) getCurrentTimestamp;
 
 - (void) setPushOptions:(CDVInvokedUrlCommand*)command;
 

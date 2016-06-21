@@ -16,15 +16,27 @@ function DonkyPlugin(){
         background: 2       
     };
 
+    function fireDonkyPluginReadyEvent(){
+        window.DonkyPluginReady = true;
+
+        setTimeout(function(){
+            var event = new Event('DonkyPluginReady');
+            document.dispatchEvent(event);        
+        }, 0);
+    }
+
     function pluginLog(message){
+        window.donkyPluginLastMessage = message;
         console.log(message);
     }
 
     function pluginError(message){
+        window.donkyPluginLastMessage = message;
         console.error(message);
     }
 
     function pluginWarn(message){
+        window.donkyPluginLastMessage = message;
         console.warn(message);
     }
 
@@ -214,6 +226,40 @@ function DonkyPlugin(){
     /**
      * 
      */
+    function handleButtonAction(notificationId, buttonText){
+        // If SDK not initialised, we can't make rest calls (even if we have a token)  should I change this ?            
+        if(donkyCore.isInitialised()){
+
+            donkyCore.addNotificationToRecentCache(notificationId);
+                                
+            donkyCore.donkyNetwork.getServerNotification(notificationId, function(notification){
+                if(notification){
+                    
+                    switch(notification.type){
+                        case "SimplePushMessage":
+                            if(window.donkyPushLogic){
+
+                                notification.displayed = new Date().valueOf();
+                                // this will mark as received and fire a local event so not sure I want to add in like this ...
+                                // flag to not publish a local event !!!                            
+                                donkyPushLogic.processPushMessage(notification, false);
+                                // this will delete the message                                                    
+                                donkyPushLogic.setSimplePushResult(notification.id, buttonText);
+                            }                                                        
+                        break;
+                    }                                                       
+                }
+            });
+            
+        }else{
+            pluginError("handleButtonAction() called when not initialised");
+        }
+    }
+
+
+    /**
+     * 
+     */
     function subscribeToDonkyEvents(){
 
 
@@ -264,40 +310,15 @@ function DonkyPlugin(){
 
         /**
          * A button has been clicked (iOS)
-         * TODO: Honour the action - URL / Deep Link
+         * TODO: Honour the action - URL / Deep Link - 
          */
         donkyCore.subscribeToLocalEvent("handleButtonAction", function (event) {
             pluginLog("handleButtonAction", JSON.stringify(event.data, null, 4));
             
-            // If SDK not initialised, we can't make rest calls (even if we have a token)  should I change this ?            
-            if(donkyCore.isInitialised()){
+            var buttonText = event.data.identifier;
+            var notificationId = event.data.userInfo.notificationId;
 
-                var buttonText = event.data.identifier;
-                var notificationId = event.data.userInfo.notificationId;
-                donkyCore.addNotificationToRecentCache(notificationId);
-                                    
-                donkyCore.donkyNetwork.getServerNotification(notificationId, function(notification){
-                    if(notification){
-                        
-                        switch(notification.type){
-                            case "SimplePushMessage":
-                                if(window.donkyPushLogic){
-
-                                    notification.displayed = new Date().valueOf();
-                                    // this will mark as received and fire a local event so not sure I want to add in like this ...
-                                    // flag to not publish a local event !!!                            
-                                    donkyPushLogic.processPushMessage(notification, false);
-                                    // this will delete the message                                                    
-                                    donkyPushLogic.setSimplePushResult(notification.id, buttonText);
-                                }                                                        
-                            break;
-                        }                                                       
-                    }
-                });
-                
-            }else{
-                pluginError("handleButtonAction() called when not initialised");
-            }
+            handleButtonAction(notificationId, buttonText);
             
         });     
     }
@@ -368,6 +389,9 @@ function DonkyPlugin(){
 
     }
 
+    /**
+     * 
+     *
     function processDismissedNotifications(notifications){
         if(notifications && notifications !== ""){
 
@@ -388,7 +412,79 @@ function DonkyPlugin(){
                 localStorage.setItem("dismissedNotificationIds", JSON.stringify(dismissed));
             }
         }
+    }*/
+
+    /**
+     * These are button clicks that occurred when the app was inactive 
+     * Process, the data, store it and add the notifications to the recent cache so we don't 
+     * inadvertantly get them again.  
+     */
+    function processColdstartNotifications(notifications){
+
+        var existing = JSON.parse(localStorage.getItem("coldstartNotifications"));
+
+        var additional = [];
+
+        if(notifications && notifications !== ""){
+            donkyCore._each(notifications.split("|").filter(function(el) {return el.length !== 0}), function(index, val){
+                additional.push(JSON.parse(val));
+            });
+
+        }
+
+        var coldStartActions = existing !==null ? existing.concat(additional) : additional;
+
+        if(coldStartActions.length > 0){
+
+            if(window.donkyCore){
+
+                donkyCore._each(coldStartActions, function(index, notification){
+                    // handleButtonAction(notification.notificationId, notification.label);
+                    // This should prevent the notification getting reprocessed
+                    donkyCore.addNotificationToRecentCache(notification.notificationId);
+                });
+                // localStorage.removeItem("coldstartNotifications");
+            }
+            
+            // These need to be picked up when we see the donkyInitialised event 
+            localStorage.setItem("coldstartNotifications", JSON.stringify(coldStartActions));
+            
+        }
+
     }
+
+    /**
+     * 
+     */
+    function queueColdstartAnalytics(){
+
+        var notifications = JSON.parse(localStorage.getItem("coldstartNotifications"));
+
+        if(notifications){
+
+            donkyCore._each(notifications, function(index, notification){
+
+                handleButtonAction(notification.notificationId, notification.label);
+
+            });
+        }
+
+    }
+
+    /**
+     * Operations to perform when donky SDK initialised event occurs ...
+     */
+    function onDonkyInitialised(){
+
+        queueAppLaunch();
+
+        doPushRegistation();
+
+        // 
+
+
+    }
+
 
     /**
      * 
@@ -397,8 +493,11 @@ function DonkyPlugin(){
         pluginLog("onCordovaReady");
         
         cordova.exec(function(info){
+            // TODO: remove 
+            window.donkyPluginLastMessage = "returned from init";
 
             pluginLog("getPlatformInfo() succeeed: " + JSON.stringify(info));
+
 
             self.available = true;
 
@@ -410,8 +509,13 @@ function DonkyPlugin(){
             self.bundleId = info.bundleId;
             self.deviceId = info.deviceId;
             self.launchTimeUtc = info.launchTimeUtc;
-            
-            processDismissedNotifications(info.dismissedNotifications);
+
+            window.donkyPluginLastMessage = "assigned properties";
+
+            // processDismissedNotifications(info.dismissedNotifications);
+            // window.donkyPluginLastMessage = "processed processDismissedNotificationss";
+            processColdstartNotifications(info.coldstartNotifications);
+            window.donkyPluginLastMessage = "processed donkyPluginLastMessage";
 
             // Set this so it can safely be picked up in donkyAccount on registration 
             // NOTE: this only gets looked at in donkyCore.donkyAccount._register
@@ -420,7 +524,6 @@ function DonkyPlugin(){
                 deviceId: self.deviceId
             };
 
-                
             // These need to be available ... (integrators responsibility to load)        
             // TODO: race condition spotted using raw cordova when referring to js files on a CDN on first install
             // window.donkyCore was not set during the first installateion
@@ -436,30 +539,17 @@ function DonkyPlugin(){
                 donkyCore.donkyAccount._setOperatingSystem(self.platform);
                 donkyCore.donkyAccount._setDeviceId(self.deviceId);
 
-                if(window.DonkyInitialised === true){
-                    
+                subscribeToDonkyEvents();
+
+                if(window.DonkyInitialised === true){                    
                     pluginLog("Missed the DonkyInitialised event ...");
-
-                    queueAppLaunch();
-
-                    subscribeToDonkyEvents();
-
-                    doPushRegistation();
-
+                    onDonkyInitialised();
                 }else{
                     // This event is ALWAYS published on succesful initialisation - hook into it and run our analysis ...
                     donkyCore.subscribeToLocalEvent("DonkyInitialised", function(event) {
-
-                        pluginLog("DonkyInitialised event received in DonkyPlugin()");   
-                        
-                        queueAppLaunch();
-                                            
-                        setTimeout(function(){
-                            doPushRegistation();
-                        },0);                        
+                        pluginLog("DonkyInitialised event received in DonkyPlugin()");                           
+                        onDonkyInitialised();
                     });
-
-                    subscribeToDonkyEvents();
                 }
                 
             }else{
@@ -471,27 +561,21 @@ function DonkyPlugin(){
                     if(window.DonkyInitialised === true){
                         clearInterval(interval);
                         pluginLog("DonkyInitialised set to true ...");
-
-                        queueAppLaunch();
-
                         subscribeToDonkyEvents();
-
-                        doPushRegistation();
-
+                        onDonkyInitialised();
                     }else{
                         pluginLog("polling for DonkyInitialised ...");
                     }
-
                 }, 500);
             }
 
-            pluginLog("==> channel.onCordovaInfoReady.fire();");
-
             channel.onCordovaInfoReady.fire();
-
-            pluginLog("<== channel.onCordovaInfoReady.fire();");
+            fireDonkyPluginReadyEvent();            
 
         },function(e){
+            // TODO: remove 
+            window.donkyPluginLastMessage = "init failed";
+
             self.available = false;
             pluginError("[ERROR] Error initializing donkyPlugin: " + e);            
         },
