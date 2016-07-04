@@ -83,6 +83,7 @@ xmlns="http://apache.org/cordova/ns/plugins/1.0"
         <source-file src="src/android/GCMIntentService.java" target-dir="src/com/donky/plugin/" />
         <source-file src="src/android/PushInstanceIDListenerService.java" target-dir="src/com/donky/plugin/" />
         <source-file src="src/android/PushIntentService.java" target-dir="src/com/donky/plugin/" />
+        <source-file src="src/android/AssemblingManager.java" target-dir="src/com/donky/plugin/" />
     </platform>
 
   

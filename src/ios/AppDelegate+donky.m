@@ -167,8 +167,7 @@ static char coldstartKey;
     
     UIApplicationState state =[[UIApplication sharedApplication] applicationState];
     
-    NSDictionary *dict = [[NSDictionary alloc] initWithObjectsAndKeys: identifier, @"identifier", userInfo, @"userInfo", @(state), @"applicationState", nil];
-    
+    NSDictionary *dict = [[NSDictionary alloc] initWithObjectsAndKeys: identifier, @"identifier", userInfo, @"userInfo", @(state), @"applicationState", [DonkyPlugin getCurrentTimestamp], @"clicked", nil];
 
     /**
      * Need 3 different behaviours here
@@ -187,15 +186,6 @@ static char coldstartKey;
             // not sure I need to do anything here as the JS handleButtonAction code simply sends the analytics result (doesn't display anything)
             break;
     }
-
-    
-    
-    
-    
-    
-
-    
-    
     
     if([[UIApplication sharedApplication] applicationState] != UIApplicationStateActive){
 
@@ -301,7 +291,7 @@ static char coldstartKey;
     
     // NOTE: if I call this when the app is in state UIApplicationStateBackground, it fires when resumed ...
     
-    if([[UIApplication sharedApplication] applicationState] != UIApplicationStateInactive){
+    if([[UIApplication sharedApplication] applicationState] != UIApplicationStateBackground){
         [DonkyPlugin notify: @"handleButtonAction" withData: dict];
     }
 
