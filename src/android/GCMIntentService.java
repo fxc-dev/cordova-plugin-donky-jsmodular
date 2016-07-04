@@ -50,31 +50,43 @@ public class GCMIntentService extends GcmListenerService implements PushConstant
 
             Log.d(LOG_TAG, "type: " + type + ", notificationType: " + notificationType);
 
-            if( type.equals("DonkyMessage")) {
-                Log.d(LOG_TAG, "DonkyMessage");
+            boolean isPart = type.equals("DonkyRichMessagePart");
 
-                Boolean isInForeground = DonkyPlugin.isInForeground();
-                Boolean isActive = DonkyPlugin.isActive();
+            if (isPart || notificationType.equals("RichMessage") ) {
+                Bundle assembledBundle = AssemblingManager.getInstance().assembleMessage(extras, isPart);
 
-                extras.putString("isInForeground", isInForeground ? "Yes" : "No");
-                extras.putString("isActive", isActive ? "Yes" : "No");
+                if (assembledBundle != null) {
+                    processMessage(assembledBundle);
 
-                if(isInForeground){
-
-                    DonkyPlugin.sendExtras(extras);
-
-                }else{
-                    createNotification(getApplicationContext(), extras);
+                    // TODO: call AssemblingManager.getInstance().removeAssembly(serverNotification.getId());
                 }
+
+            } else {
+                processMessage(extras);
             }
-            else if(type.equals("DonkyRichMessagePart")){
-                Log.d(LOG_TAG, "DonkyRichMessagePart");
-            }
-            else{
-                Log.d(LOG_TAG, "Ignoring this push: " + type);
-            }
+
+
         }
     }
+
+    private void processMessage(Bundle extras){
+
+        Boolean isInForeground = DonkyPlugin.isInForeground();
+        Boolean isActive = DonkyPlugin.isActive();
+
+        extras.putString("isInForeground", isInForeground ? "Yes" : "No");
+        extras.putString("isActive", isActive ? "Yes" : "No");
+
+        if(isInForeground){
+
+            DonkyPlugin.sendExtras(extras);
+
+        }else{
+            createNotification(getApplicationContext(), extras);
+        }
+
+    }
+
 
     private PendingIntent getPendingIntentForRichMessage(int notificationId, Bundle extras) {
         Intent intent = new Intent(this, PushIntentService.class);
