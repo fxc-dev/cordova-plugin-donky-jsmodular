@@ -57,8 +57,6 @@ public class GCMIntentService extends GcmListenerService implements PushConstant
 
                 if (assembledBundle != null) {
                     processMessage(assembledBundle);
-
-                    // TODO: call AssemblingManager.getInstance().removeAssembly(serverNotification.getId());
                 }
 
             } else {
