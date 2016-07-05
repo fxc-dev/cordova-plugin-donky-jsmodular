@@ -548,7 +548,7 @@ function DonkyPlugin(){
                                 });
                             }
 
-                            successCallback();
+                            successCallback(info);
 
                         }else{
                             errorCallback({message: "donkyCore already initialised, initialise this plugin BEFORE Donky"});
