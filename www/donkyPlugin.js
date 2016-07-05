@@ -361,7 +361,7 @@ function DonkyPlugin(){
     function doPushRegistation(){
 
         // Assumption is that Donky is initialised now as we need the button sets
-        self.registerForPush(function(result){
+        cordova.exec(function(result){
             pluginLog("registerForPush success callback: " + JSON.stringify(result));
 
             // success callback re-used for push notifications and returning device token                                                 
@@ -388,7 +388,8 @@ function DonkyPlugin(){
         }, function(error){
             pluginLog("registerForPush failed" + JSON.stringify(error));
         },
-        self.platform === "iOS" ? JSON.stringify(donkyCore.getiOSButtonCategories()) : undefined);
+        "donky", "registerForPush",
+        self.platform === "iOS" ? [JSON.stringify(donkyCore.getiOSButtonCategories())] : []);
 
     }
 
@@ -592,7 +593,7 @@ function DonkyPlugin(){
             self.available = false;
             pluginError("[ERROR] Error initializing donkyPlugin: " + e);            
         },
-        "donky", "init", []);
+        "donky", "initialise", []);
     });
 }
 
@@ -622,16 +623,29 @@ DonkyPlugin.prototype.callback = function(eventName, eventData){
     }                   
 }
 
-
 /**
- * Method to register for push notifications
+ * Method to initialise donky plugin
  * @param {Callback} successCallback - callback to call if method was succsful with the deviceId
  * @param {Callback} errorCallback - callback to call if method failed with the error messag
- * @param {String} arg1 - stringified buttonset details from donky config if ios or senderId if Android
+ * @param {String} options
  */
-DonkyPlugin.prototype.registerForPush = function(successCallback, errorCallback, arg1){
-    cordova.exec(successCallback, errorCallback, "donky", "registerForPush",[arg1]);        
+DonkyPlugin.prototype.initialise = function(successCallback, errorCallback, options){
+    cordova.exec(successCallback, errorCallback, "donky", "initialise", [options]);        
 }
+
+
+
+/**
+ * Method to register for push notifications - NOTE: this is called internallo on donkyReady event 
+ * TODO: should this even be exposed ? 
+ * @param {Callback} successCallback - callback to call if method was succsful with the deviceId
+ * @param {Callback} errorCallback - callback to call if method failed with the error messag
+ * @param {String} options - stringified buttonset details from donky config if ios
+ */
+/*
+DonkyPlugin.prototype.registerForPush = function(successCallback, errorCallback, options){
+    cordova.exec(successCallback, errorCallback, "donky", "registerForPush",[options]);        
+}*/
 
 
 
@@ -657,10 +671,11 @@ DonkyPlugin.prototype.registerForPush = function(successCallback, errorCallback,
  * 
  * @param {Callback} successCallback - callback to call if method was succsful with the deviceId
  * @param {Callback} errorCallback - callback to call if method failed with the error messag
- * @param {String} arg1 - JSon object ontaining the options
+ * @param {String} options - JSon object ontaining the options
  */
-DonkyPlugin.prototype.setPushOptions = function(successCallback, errorCallback, arg1){
-    cordova.exec(successCallback, errorCallback, "donky", "setPushOptions",[arg1]);        
+
+DonkyPlugin.prototype.setPushOptions = function(successCallback, errorCallback, options){
+    cordova.exec(successCallback, errorCallback, "donky", "setPushOptions",[options]);        
 }
 
 
@@ -671,9 +686,10 @@ DonkyPlugin.prototype.setPushOptions = function(successCallback, errorCallback, 
  * @param {Callback} errorCallback - callback to call if method failed with the error messag
  * @param {String} arg1 - stringified buttonset details from donky config if ios or senderId if Android
  */
+/*
 DonkyPlugin.prototype.unregisterForPush = function(successCallback, errorCallback){
     cordova.exec(successCallback, errorCallback, "donky", "unregisterForPush");        
-}
+}*/
 
 
 /**

@@ -115,7 +115,7 @@ public class DonkyPlugin extends CordovaPlugin implements PushConstants{
         Log.v(LOG_TAG, "execute: action=" + action);
         gWebView = this.webView;
 
-        if (action.equals("init")) {
+        if (action.equals("initialise")) {
 
             JSONObject platformInfo = new JSONObject();
 

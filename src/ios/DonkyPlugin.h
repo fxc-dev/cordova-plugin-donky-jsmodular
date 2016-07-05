@@ -7,7 +7,7 @@
 
 @property (nonatomic, copy) NSString *callbackId;
 
-- (void) init:(CDVInvokedUrlCommand*)command;
+- (void) initialise:(CDVInvokedUrlCommand*)command;
 - (void) registerForPush:(CDVInvokedUrlCommand*)command;
 - (void) unregisterForPush:(CDVInvokedUrlCommand*)command;
 - (void) setBadgeCount:(CDVInvokedUrlCommand*)command; 

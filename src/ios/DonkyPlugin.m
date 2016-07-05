@@ -58,7 +58,7 @@ static UIWebView* webView;
 }
 
 
-- (void)init:(CDVInvokedUrlCommand*)command
+- (void)initialise:(CDVInvokedUrlCommand*)command
 {
     NSLog(@"Donky::getPlatformInfo");
     NSString *deviceId = [DNKeychainHelper objectForKey:DNDeviceID];
