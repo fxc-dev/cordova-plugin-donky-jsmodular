@@ -134,8 +134,6 @@ public class DonkyPlugin extends CordovaPlugin implements PushConstants{
 
             editor.putString("dismissedNotifications", "");
 
-            editor.commit();
-
             TimeZone tz = TimeZone.getTimeZone("UTC");
             DateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mmZ");
             df.setTimeZone(tz);
@@ -143,10 +141,6 @@ public class DonkyPlugin extends CordovaPlugin implements PushConstants{
 
             platformInfo.put("launchTimeUtc", nowAsISO);
 
-            callbackContext.success(platformInfo);
-            return true;
-        }
-        else if(action.equals("setPushOptions")){
             String jsonOptions = data.getString(0);
             Log.v(LOG_TAG, "setPushOptions: " + jsonOptions);
 
@@ -164,10 +158,6 @@ public class DonkyPlugin extends CordovaPlugin implements PushConstants{
             Log.v(LOG_TAG, "icon: " + icon);
             Log.v(LOG_TAG, "iconColor: " + iconColor);
 
-            SharedPreferences sharedPref = getApplicationContext().getSharedPreferences(COM_DONKY_PLUGIN, Context.MODE_PRIVATE);
-
-            SharedPreferences.Editor editor = sharedPref.edit();
-
             editor.putString("environment", environment);
             editor.putBoolean("vibrate", vibrate);
             editor.putString("icon", icon);
@@ -175,7 +165,7 @@ public class DonkyPlugin extends CordovaPlugin implements PushConstants{
 
             editor.commit();
 
-            callbackContext.success();
+            callbackContext.success(platformInfo);
             return true;
         }
         else if(action.equals("openDeepLink")){

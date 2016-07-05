@@ -15,8 +15,6 @@
 + (Boolean)openDeepLink:(NSURL*)url;
 + (NSString*) getCurrentTimestamp;
 
-- (void) setPushOptions:(CDVInvokedUrlCommand*)command;
-
 - (void) notificationReceived:(NSDictionary *)notificationMessage;
 
 - (void)didRegisterForRemoteNotificationsWithDeviceToken:(NSData *)deviceToken;

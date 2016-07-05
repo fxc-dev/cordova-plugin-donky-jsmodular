@@ -1,10 +1,3 @@
-var channel = require('cordova/channel'),
-    utils = require('cordova/utils');
-
-channel.createSticky('onCordovaInfoReady');
-// Tell cordova channel to wait on the CordovaInfoReady event
-channel.waitForInitialization('onCordovaInfoReady');
-
 /**
  * DonkyPlugin constructor
  */
@@ -15,15 +8,6 @@ function DonkyPlugin(){
         inactive: 1,
         background: 2       
     };
-
-    function fireDonkyPluginReadyEvent(){
-        window.DonkyPluginReady = true;
-
-        setTimeout(function(){
-            var event = new Event('DonkyPluginReady');
-            document.dispatchEvent(event);        
-        }, 0);
-    }
 
     function pluginLog(message){
         if(window.donkyCore){
@@ -394,31 +378,6 @@ function DonkyPlugin(){
     }
 
     /**
-     * 
-     *
-    function processDismissedNotifications(notifications){
-        if(notifications && notifications !== ""){
-
-            var existing = JSON.parse(localStorage.getItem("dismissedNotificationIds"));
-
-            var additional = notifications.split(",").filter(function(el) {return el.length !== 0}); 
-
-            var dismissed = existing !==null ? existing.concat(additional) : additional;
-
-            if(window.donkyCore){
-                donkyCore._each(dismissed, function(index, notificationId){
-                    donkyCore.addNotificationToRecentCache(notificationId);
-                });
-                localStorage.removeItem("dismissedNotificationIds");
-            }else{
-                pluginError("processDismissedNotifications - no donkyCore");
-                // set them for next time ?
-                localStorage.setItem("dismissedNotificationIds", JSON.stringify(dismissed));
-            }
-        }
-    }*/
-
-    /**
      * These are button clicks that occurred when the app was inactive 
      * Process, the data, store it and add the notifications to the recent cache so we don't 
      * inadvertantly get them again.  
@@ -506,217 +465,132 @@ function DonkyPlugin(){
 
     }
 
+    /**
+     * Internal callback function for iOS native code to call to trigger an event for the client.
+     * A CustomEvent is created which can be intercepted as follows:
+     * 
+     *  document.addEventListener("donkyevent", function (e) {
+     *      console.log("donkyevent: " + JSON.stringify(e.detail));
+     *  }, false);      
+     * 
+     * current events:
+     * 
+     * 1) pushRegistrationSucceeded
+     * 2) pushRegistrationFailed
+     * 3) handleButtonAction
+     * 
+     * @param  {String} eventName - the name of the event
+     * @param  {Object} eventData - the object data associated with the event
+     */
+    DonkyPlugin.prototype.callback = function(eventName, eventData){                
+        if(window.donkyCore){        
+            donkyCore.publishLocalEvent({ type: eventName, data: eventData });            
+        }else{
+            pluginError("callback(" + eventName + ") : window.donkyCore not set" );
+        }                   
+    }
 
     /**
-     * 
-     */    
-    channel.onCordovaReady.subscribe(function() {
-        pluginLog("onCordovaReady");
-        
-        cordova.exec(function(info){
+     * Method to initialise donky plugin
+     * @param {Callback} successCallback - callback to call if method was succsful with the deviceId
+     * @param {Callback} errorCallback - callback to call if method failed with the error messag
+     * @param {String} options
+     */
+    DonkyPlugin.prototype.initialise = function(successCallback, errorCallback, options){
 
-            pluginLog("getPlatformInfo() succeeed: " + JSON.stringify(info));
+        cordova.exec(
+            function(info){
 
+                pluginLog("getPlatformInfo() succeeed: " + JSON.stringify(info));
 
-            self.available = true;
+                self.available = true;
 
-            self.manufacturer = info.manufacturer;
-            self.model = info.model;
-            self.platform = info.platform;
-            self.version = info.version;
-            self.cordova = info.cordova;
-            self.bundleId = info.bundleId;
-            self.deviceId = info.deviceId;
-            self.launchTimeUtc = info.launchTimeUtc;
-
-            // processDismissedNotifications(info.dismissedNotifications);
-            
-            processColdstartNotifications(info.coldstartNotifications);
-
-            // Set this so it can safely be picked up in donkyAccount on registration 
-            // NOTE: this only gets looked at in donkyCore.donkyAccount._register
-            window.donkyDeviceOverrides = {
-                operatingSystem: self.platform,
-                deviceId: self.deviceId
-            };
-
-            // These need to be available ... (integrators responsibility to load)        
-            // TODO: race condition spotted using raw cordova when referring to js files on a CDN on first install
-            // window.donkyCore was not set during the first installateion
-            // net effect of this is the device gets registered as "Web"
-
-            if(window.donkyCore){
-
-                // These need to be set BEFORE integrator calls  calls donkyCore.initialise() - hence it is occurring in  onCordovaReady callback
-                // >>>
-                // shall I sniff donkyDeviceOverrides in initialise ?
-                // or shall I fire an event pluginReady ?
-                // <<<
-                donkyCore.donkyAccount._setOperatingSystem(self.platform);
-                donkyCore.donkyAccount._setDeviceId(self.deviceId);
-
-                subscribeToDonkyEvents();
-
-                if(window.DonkyInitialised === true){                    
-                    pluginLog("Missed the DonkyInitialised event ...");
-                    onDonkyInitialised();
-                }else{
-                    // This event is ALWAYS published on succesful initialisation - hook into it and run our analysis ...
-                    donkyCore.subscribeToLocalEvent("DonkyInitialised", function(event) {
-                        pluginLog("DonkyInitialised event received in DonkyPlugin()");                           
-                        onDonkyInitialised();
-                    });
-                }
+                self.manufacturer = info.manufacturer;
+                self.model = info.model;
+                self.platform = info.platform;
+                self.version = info.version;
+                self.cordova = info.cordova;
+                self.bundleId = info.bundleId;
+                self.deviceId = info.deviceId;
+                self.launchTimeUtc = info.launchTimeUtc;
                 
-            }else{
-                pluginWarn("window.donkyCore not set in donkyPlugin, will poll for window.DonkyInitialised");
+                processColdstartNotifications(info.coldstartNotifications);
 
-                var interval = 
-                setInterval(function(){
+                // Set this so it can safely be picked up in donkyAccount on registration 
+                // NOTE: this only gets looked at in donkyCore.donkyAccount._register
+                window.donkyDeviceOverrides = {
+                    operatingSystem: self.platform,
+                    deviceId: self.deviceId
+                };
 
-                    if(window.DonkyInitialised === true){
-                        clearInterval(interval);
-                        pluginLog("DonkyInitialised set to true ...");
-                        subscribeToDonkyEvents();
-                        onDonkyInitialised();
+                if(window.donkyCore){
+
+                    // version must be >= 2.2.3.0 
+                    if (donkyCore._versionCompare(donkyCore.version(), "2.2.3.0") < 0) {
+                        errorCallback({message: "donkyCore varsion too old - require minimum version of 2.2.3.0"});
                     }else{
-                        pluginLog("polling for DonkyInitialised ...");
+
+                        if(!donkyCore.isInitialised()){
+
+                            donkyCore.donkyAccount._setOperatingSystem(self.platform);
+                            donkyCore.donkyAccount._setDeviceId(self.deviceId);
+
+                            subscribeToDonkyEvents();
+
+                            if(window.DonkyInitialised === true){                    
+                                pluginLog("Missed the DonkyInitialised event ...");
+                                onDonkyInitialised();
+                            }else{
+                                // This event is ALWAYS published on succesful initialisation - hook into it and run our analysis ...
+                                donkyCore.subscribeToLocalEvent("DonkyInitialised", function(event) {
+                                    pluginLog("DonkyInitialised event received in DonkyPlugin()");                           
+                                    onDonkyInitialised();
+                                });
+                            }
+
+                            successCallback();
+
+                        }else{
+                            errorCallback({message: "donkyCore already initialised, initialise this plugin BEFORE Donky"});
+                        }                
                     }
-                }, 500);
-            }
-
-            channel.onCordovaInfoReady.fire();
-            fireDonkyPluginReadyEvent();            
-
-        },function(e){
-
-            self.available = false;
-            pluginError("[ERROR] Error initializing donkyPlugin: " + e);            
-        },
-        "donky", "initialise", []);
-    });
-}
-
-
-/**
- * Internal callback function for iOS native code to call to trigger an event for the client.
- * A CustomEvent is created which can be intercepted as follows:
- * 
- *  document.addEventListener("donkyevent", function (e) {
- *      console.log("donkyevent: " + JSON.stringify(e.detail));
- *  }, false);      
- * 
- * current events:
- * 
- * 1) pushRegistrationSucceeded
- * 2) pushRegistrationFailed
- * 3) handleButtonAction
- * 
- * @param  {String} eventName - the name of the event
- * @param  {Object} eventData - the object data associated with the event
- */
-DonkyPlugin.prototype.callback = function(eventName, eventData){                
-    if(window.donkyCore){        
-        donkyCore.publishLocalEvent({ type: eventName, data: eventData });            
-    }else{
-        pluginError("callback(" + eventName + ") : window.donkyCore not set" );
-    }                   
-}
-
-/**
- * Method to initialise donky plugin
- * @param {Callback} successCallback - callback to call if method was succsful with the deviceId
- * @param {Callback} errorCallback - callback to call if method failed with the error messag
- * @param {String} options
- */
-DonkyPlugin.prototype.initialise = function(successCallback, errorCallback, options){
-    cordova.exec(successCallback, errorCallback, "donky", "initialise", [options]);        
-}
-
-
-
-/**
- * Method to register for push notifications - NOTE: this is called internallo on donkyReady event 
- * TODO: should this even be exposed ? 
- * @param {Callback} successCallback - callback to call if method was succsful with the deviceId
- * @param {Callback} errorCallback - callback to call if method failed with the error messag
- * @param {String} options - stringified buttonset details from donky config if ios
- */
-/*
-DonkyPlugin.prototype.registerForPush = function(successCallback, errorCallback, options){
-    cordova.exec(successCallback, errorCallback, "donky", "registerForPush",[options]);        
-}*/
-
-
-
-/**
- * Method to set push options 
- * 
- * 
-            // TODO: don't ned these callbacks ...
-            window.cordova.plugins.donkyPlugin.setPushOptions(function(){}, function(){}, {
-                ios: {
                     
-                },
-                android:{
-                    environment: "dev-",
-                    vibrate: true,
-                    iconId: 0,
-                    color: 0xff0000FF,
-                    senderId: "793570521924"                 
+                }else{
+                    errorCallback({message: "donkyCore not available"});
                 }
-            });
- * 
- * 
- * 
- * @param {Callback} successCallback - callback to call if method was succsful with the deviceId
- * @param {Callback} errorCallback - callback to call if method failed with the error messag
- * @param {String} options - JSon object ontaining the options
- */
+            }, 
+            function(e){
 
-DonkyPlugin.prototype.setPushOptions = function(successCallback, errorCallback, options){
-    cordova.exec(successCallback, errorCallback, "donky", "setPushOptions",[options]);        
+                self.available = false;
+                pluginError("[ERROR] Error initializing donkyPlugin: " + e);            
+
+                errorCallback(e);
+            }, 
+            "donky", "initialise", [options]);
+    }
+
+
+    /**
+     * Method to allow integrator to explicitly set the application badge count
+     * @param {Callback} successCallback - callback to call if method was succsful
+     * @param {Callback} errorCallback - callback to call if method failed with the error messag
+     * @param {Number} count - the count to set to
+     */
+    DonkyPlugin.prototype.setBadgeCount = function(successCallback, errorCallback, count){
+        cordova.exec(successCallback, errorCallback, "donky", "setBadgeCount", [count]);        
+    }
+
+    /**
+     * Method to allow integrator to open a deep link
+     * @param {Callback} successCallback - callback to call if method was succsful
+     * @param {Callback} errorCallback - callback to call if method failed with the error messag
+     * @param {String} link - the link to open
+     */
+    DonkyPlugin.prototype.openDeepLink = function(successCallback, errorCallback, link){
+        cordova.exec(successCallback, errorCallback, "donky", "openDeepLink", [link]);        
+    }
+
 }
-
-
-
-/**
- * Method to register for push notifications
- * @param {Callback} successCallback - callback to call if method was succsful with the deviceId
- * @param {Callback} errorCallback - callback to call if method failed with the error messag
- * @param {String} arg1 - stringified buttonset details from donky config if ios or senderId if Android
- */
-/*
-DonkyPlugin.prototype.unregisterForPush = function(successCallback, errorCallback){
-    cordova.exec(successCallback, errorCallback, "donky", "unregisterForPush");        
-}*/
-
-
-/**
- * Method to allow integrator to explicitly set the application badge count
- * @param {Callback} successCallback - callback to call if method was succsful
- * @param {Callback} errorCallback - callback to call if method failed with the error messag
- * @param {Number} count - the count to set to
- */
-DonkyPlugin.prototype.setBadgeCount = function(successCallback, errorCallback, count){
-    cordova.exec(successCallback, errorCallback, "donky", "setBadgeCount", [count]);        
-}
-
-/**
- * Method to allow integrator to open a deep link
- * @param {Callback} successCallback - callback to call if method was succsful
- * @param {Callback} errorCallback - callback to call if method failed with the error messag
- * @param {String} link - the link to open
- */
-DonkyPlugin.prototype.openDeepLink = function(successCallback, errorCallback, link){
-    cordova.exec(successCallback, errorCallback, "donky", "openDeepLink", [link]);        
-}
-
-
-DonkyPlugin.prototype.log = function(message){
-    console.log(message);
-}
-
 
 
 module.exports = new DonkyPlugin();
