@@ -105,23 +105,6 @@ static char coldstartKey;
 - (void)application:(UIApplication *)application didRegisterForRemoteNotificationsWithDeviceToken:(NSData *)deviceToken {    
 
     NSLog(@"AppDelegate(donky)::didRegisterForRemoteNotificationsWithDeviceToken");
-
-#if 0
-    NSMutableString *hexString = nil;
-    if (deviceToken) {
-        const unsigned char *dataBuffer = (const unsigned char *) [deviceToken bytes];
-        
-        NSUInteger dataLength = [deviceToken length];
-        hexString = [NSMutableString stringWithCapacity:(dataLength * 2)];
-        
-        for (int i = 0; i < dataLength; ++i) {
-            [hexString appendString:[NSString stringWithFormat:@"%02lx", (unsigned long) dataBuffer[i]]];
-        }
-    }
-
-    NSDictionary *dict = [[NSDictionary alloc] initWithObjectsAndKeys: hexString, @"deviceToken", nil];
-    [DonkyPlugin notify: @"pushRegistrationSucceeded" withData: dict];
-#endif    
     
     DonkyPlugin *donkyPlugin = [self getCommandInstance:@"donky"];
     [donkyPlugin didRegisterForRemoteNotificationsWithDeviceToken:deviceToken];
@@ -129,8 +112,9 @@ static char coldstartKey;
 }
 
 - (void)application:(UIApplication *)application didFailToRegisterForRemoteNotificationsWithError:(NSError *)error {
-    NSDictionary *dict = [[NSDictionary alloc] initWithObjectsAndKeys: [error localizedDescription], @"error", nil];
-    [DonkyPlugin notify: @"pushRegistrationFailed" withData: dict];
+
+    DonkyPlugin *donkyPlugin = [self getCommandInstance:@"donky"];
+    [donkyPlugin didFailToRegisterForRemoteNotificationsWithError:error];
 }
 
 /**

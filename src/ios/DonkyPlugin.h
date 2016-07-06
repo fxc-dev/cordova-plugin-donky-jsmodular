@@ -18,6 +18,9 @@
 - (void) notificationReceived:(NSDictionary *)notificationMessage;
 
 - (void)didRegisterForRemoteNotificationsWithDeviceToken:(NSData *)deviceToken;
+- (void)didFailToRegisterForRemoteNotificationsWithError:(NSError *)error;
+
+
 
 + (void) notify:(NSString *)event withData:(NSDictionary *)data;
 
