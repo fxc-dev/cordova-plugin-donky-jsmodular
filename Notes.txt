@@ -1,58 +1,33 @@
+Post code complete tsting issues
+================================
 
 
+iOS push registration if user doesn't allow notifications ...
 
-Plugin is pretty much seamless apart from a required call to setPushOptions BEFORE donkyCore.initialise()
-
-
-Plugin currently hooks into onCordovaInfoReady event and automatically calls getPlatformInfo
-
-This allows us to have OS and deviceId before donkyCore.initialise() is called (we need that)
+scenarions
 
 
-Push registration is automatic - plugin subscribes to DonkyInitialised local event and then calls sendPushConfiguration
+1) App is installed and first time it is launched user hits don't allow
 
+    registerForPush() called
 
-App launch / app session managed by plugin based on AppBackgrounded / AppForegrounded events 
+    in delegate didRegisterForRemoteNotificationsWithDeviceToken with a token AND popup visible
 
+    in didRegisterUserNotificationSettings with notificationSettings.types false
 
-incoming push messages have 2 completely different flows
+2) subsequent launch of the app (with push still off)
 
+    registerForPush() called
 
-iOS
-===
+    didRegisterUserNotificationSettings  with notificationSettings.types false
 
-button clicks riggered by callback mech - generate handleButtonAction local events (could just call a func)
+3) User goes into settings and turns  on push 
 
-push notification when app open comes in through registerForPush callback - generates pushNotification local event
+    registerForPush() called
 
-in both cases we have to get the notification with getServerNotification()
+    didRegisterForRemoteNotificationsWithDeviceToken delegate fires
 
+    didRegisterUserNotificationSettings fires with notificationSettings.types TRUE
 
-Android
-=======
-
-Button clicks and incoming push messages are returned via registerForPush callback
-
-in both cases, we have the full message so we can just get on with it
-
-
-TODO: 
-=====
-
-iOS senderId ? how to specify ?
-
-    - if I add to setPushOptions, will that cause race condition ?
-        - could mandate that setPushOptions is called before initialise ;-) 
-    - add to plugin install setup ?
-
-Error handling strategy
-
-Plugin JS productionising 
-    
-
-
-
-
-
-
+4) User goes into settings and turns off push
 

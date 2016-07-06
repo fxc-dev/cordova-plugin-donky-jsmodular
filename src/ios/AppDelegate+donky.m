@@ -102,8 +102,7 @@ static char coldstartKey;
 }
 #endif
 
-- (void)application:(UIApplication *)application didRegisterForRemoteNotificationsWithDeviceToken:(NSData *)deviceToken {    
-
+- (void)application:(UIApplication *)application didRegisterForRemoteNotificationsWithDeviceToken:(NSData *)deviceToken {
     NSLog(@"AppDelegate(donky)::didRegisterForRemoteNotificationsWithDeviceToken");
     
     DonkyPlugin *donkyPlugin = [self getCommandInstance:@"donky"];
@@ -112,10 +111,19 @@ static char coldstartKey;
 }
 
 - (void)application:(UIApplication *)application didFailToRegisterForRemoteNotificationsWithError:(NSError *)error {
+    NSLog(@"AppDelegate(donky)::didFailToRegisterForRemoteNotificationsWithError");
 
     DonkyPlugin *donkyPlugin = [self getCommandInstance:@"donky"];
     [donkyPlugin didFailToRegisterForRemoteNotificationsWithError:error];
 }
+
+- (void)application:(UIApplication*)application didRegisterUserNotificationSettings:(nonnull UIUserNotificationSettings *)notificationSettings{
+    NSLog(@"AppDelegate(donky)::didRegisterUserNotificationSettings");
+    
+    DonkyPlugin *donkyPlugin = [self getCommandInstance:@"donky"];
+    [donkyPlugin didRegisterUserNotificationSettings:notificationSettings];
+}
+
 
 /**
  * This one is called if the notification is tapped (and app is backgrounded)
@@ -281,24 +289,6 @@ static char coldstartKey;
 
     completionHandler(UIBackgroundFetchResultNewData);
 }
-
-#if _HANDLE_USER_ACTIVITY_
-- (BOOL)application:(UIApplication *)application continueUserActivity:(NSUserActivity *)userActivity restorationHandler:(void (^)(NSArray * _Nullable))restorationHandler {
-    // ignore activities that are not for Universal Links
-    if (![userActivity.activityType isEqualToString:NSUserActivityTypeBrowsingWeb] || userActivity.webpageURL == nil) {
-        return NO;
-    }
-    
-    // get instance of the plugin and let it handle the userActivity object
-    DonkyPlugin *donkyPlugin = [self getCommandInstance:@"donky"];
-    
-    if (donkyPlugin == nil) {
-        return NO;
-    }
-    
-    return [donkyPlugin handleUserActivity:userActivity];
-}
-#endif
 
 
 #if _SWIZZLED_INIT_

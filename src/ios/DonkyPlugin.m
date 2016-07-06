@@ -178,8 +178,6 @@ static UIWebView* webView;
 
 - (void) unregisterForPush:(CDVInvokedUrlCommand*)command
 {
-    self.callbackId = command.callbackId;
-
     [[UIApplication sharedApplication] unregisterForRemoteNotifications];
     
     CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:@"unregistered"];
@@ -192,6 +190,7 @@ static UIWebView* webView;
         NSLog(@"Unexpected call to didRegisterForRemoteNotificationsWithDeviceToken, ignoring: %@", deviceToken);
         return;
     }
+    
     NSLog(@"Push Plugin register success: %@", deviceToken);
     
     NSMutableString *hexString = nil;
@@ -215,6 +214,10 @@ static UIWebView* webView;
 
 
 - (void)didFailToRegisterForRemoteNotificationsWithError:(NSError *)error{
+    if (self.callbackId == nil) {
+        NSLog(@"Unexpected call to didFailToRegisterForRemoteNotificationsWithError, ignoring: %@", error);
+        return;
+    }
 
     NSDictionary *message = [[NSDictionary alloc] initWithObjectsAndKeys: [error localizedDescription], @"message", nil];
     
@@ -222,6 +225,29 @@ static UIWebView* webView;
     [pluginResult setKeepCallbackAsBool:YES];
     [self.commandDelegate sendPluginResult:pluginResult callbackId:self.callbackId];
 
+}
+
+- (void)didRegisterUserNotificationSettings:(nonnull UIUserNotificationSettings *)notificationSettings{
+
+    if (self.callbackId == nil) {
+        NSLog(@"Unexpected call to didRegisterUserNotificationSettings, ignoring: %@", notificationSettings);
+        return;
+    }
+    
+    
+    if (notificationSettings.types) {
+        NSLog(@"user allowed notifications");
+    }else{
+        NSLog(@"user did not allow notifications");
+        
+        
+        NSDictionary *message = [[NSDictionary alloc] initWithObjectsAndKeys: @"user did not allow notifications", @"message", nil];
+        
+        CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsDictionary:message];
+        [pluginResult setKeepCallbackAsBool:YES];
+        [self.commandDelegate sendPluginResult:pluginResult callbackId:self.callbackId];
+        
+    }
 }
 
 
@@ -269,6 +295,11 @@ static UIWebView* webView;
 
 - (void)notificationReceived:(NSDictionary *)notificationMessage;
 {
+    if (self.callbackId == nil) {
+        NSLog(@"Unexpected call to notificationReceived, ignoring: %@", notificationMessage);
+        return;
+    }
+    
     NSLog(@"Notification received: %@", notificationMessage);
     
     // send notification message
@@ -317,16 +348,5 @@ static UIWebView* webView;
     
 }
 
-
-#if _HANDLE_USER_ACTIVITY_
-- (BOOL)handleUserActivity:(NSUserActivity *)userActivity {
-    
-    NSURL *launchURL = userActivity.webpageURL;
-
-    NSLog(@"%@", launchURL);
-    
-    return NO;
-}
-#endif
 
 @end
