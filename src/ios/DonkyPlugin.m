@@ -112,6 +112,20 @@ static UIWebView* webView;
     [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
 }
 
+- (void)hasPermission:(CDVInvokedUrlCommand *)command
+{
+    BOOL enabled = NO;
+    id<UIApplicationDelegate> appDelegate = [UIApplication sharedApplication].delegate;
+    if ([appDelegate respondsToSelector:@selector(userHasRemoteNotificationsEnabled)]) {
+        enabled = [appDelegate performSelector:@selector(userHasRemoteNotificationsEnabled)];
+    }
+    
+    NSMutableDictionary* message = [NSMutableDictionary dictionaryWithCapacity:1];
+    [message setObject:[NSNumber numberWithBool:enabled] forKey:@"isEnabled"];
+    CDVPluginResult *commandResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:message];
+    [self.commandDelegate sendPluginResult:commandResult callbackId:command.callbackId];
+}
+
 - (void)registerForPush:(CDVInvokedUrlCommand*)command
 {
     NSLog(@"Donky::registerForPush");

@@ -168,6 +168,24 @@ public class DonkyPlugin extends CordovaPlugin implements PushConstants{
             callbackContext.success(platformInfo);
             return true;
         }
+        else if (action.equals("hasPermission")) {
+            cordova.getThreadPool().execute(new Runnable() {
+                public void run() {
+                    JSONObject jo = new JSONObject();
+                    try {
+                        jo.put("isEnabled", PermissionUtils.hasPermission(getApplicationContext(), "OP_POST_NOTIFICATION"));
+                        PluginResult pluginResult = new PluginResult(PluginResult.Status.OK, jo);
+                        pluginResult.setKeepCallback(true);
+                        callbackContext.sendPluginResult(pluginResult);
+                    } catch (UnknownError e) {
+                        callbackContext.error(e.getMessage());
+                    } catch (JSONException e) {
+                        callbackContext.error(e.getMessage());
+                    }
+                }
+            });
+            return true;
+        }        
         else if(action.equals("openDeepLink")){
             String deepLink = data.getString(0);
 

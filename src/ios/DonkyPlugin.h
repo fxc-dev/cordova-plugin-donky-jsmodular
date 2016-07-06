@@ -1,13 +1,11 @@
 #import <Cordova/CDV.h>
 
-
-
-
 @interface DonkyPlugin : CDVPlugin
 
 @property (nonatomic, copy) NSString *callbackId;
 
 - (void) initialise:(CDVInvokedUrlCommand*)command;
+- (void) hasPermission:(CDVInvokedUrlCommand *)command; 
 - (void) registerForPush:(CDVInvokedUrlCommand*)command;
 - (void) unregisterForPush:(CDVInvokedUrlCommand*)command;
 - (void) setBadgeCount:(CDVInvokedUrlCommand*)command; 

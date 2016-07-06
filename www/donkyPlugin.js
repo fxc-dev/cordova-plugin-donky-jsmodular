@@ -130,7 +130,7 @@ function DonkyPlugin(){
         var notificationId = result.additionalData.notificationId;
 
         if(notificationId !== undefined){
-            
+
             var applicationState = mapAndroidAppState(result.additionalData);
             
             if(self.applicationStateOnPush === undefined){
@@ -574,6 +574,15 @@ function DonkyPlugin(){
             "donky", "initialise", [options]);
     }
 
+
+    /**
+     * Method to allow integrator to request whether user has granted permission to access Notifications
+     * @param {Callback} successCallback - callback to call if method was succsful with the result
+     * @param {Callback} errorCallback - callback to call if method failed with the error messag
+     */
+    DonkyPlugin.prototype.hasPermission = function(successCallback, errorCallback) {
+        exec(successCallback, errorCallback, 'donky', 'hasPermission', []);
+    };
 
     /**
      * Method to allow integrator to explicitly set the application badge count
