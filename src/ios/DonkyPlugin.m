@@ -242,25 +242,11 @@ static UIWebView* webView;
 }
 
 - (void)didRegisterUserNotificationSettings:(nonnull UIUserNotificationSettings *)notificationSettings{
-
-    if (self.callbackId == nil) {
-        NSLog(@"Unexpected call to didRegisterUserNotificationSettings, ignoring: %@", notificationSettings);
-        return;
-    }
-    
     
     if (notificationSettings.types) {
         NSLog(@"user allowed notifications");
     }else{
         NSLog(@"user did not allow notifications");
-        
-        
-        NSDictionary *message = [[NSDictionary alloc] initWithObjectsAndKeys: @"user did not allow notifications", @"message", nil];
-        
-        CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsDictionary:message];
-        [pluginResult setKeepCallbackAsBool:YES];
-        [self.commandDelegate sendPluginResult:pluginResult callbackId:self.callbackId];
-        
     }
 }
 
