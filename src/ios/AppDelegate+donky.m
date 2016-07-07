@@ -3,10 +3,8 @@
 #import <objc/runtime.h>
 #import "DonkyPlugin.h"
 
-#if _SWIZZLED_INIT_
 static char launchNotificationKey;
 static char coldstartKey;
-#endif
 
 @implementation AppDelegate (donky)
 
@@ -16,7 +14,6 @@ static char coldstartKey;
 }
 
 
-#if _SWIZZLED_INIT_
 // its dangerous to override a method from within a category.
 // Instead we will use method swizzling. we set this up in the load call.
 + (void)load
@@ -78,9 +75,9 @@ static char coldstartKey;
     {
         NSDictionary *launchOptions = [notification userInfo];
         if (launchOptions) {
-            NSLog(@"coldstart");
             self.launchNotification = [launchOptions objectForKey: @"UIApplicationLaunchOptionsRemoteNotificationKey"];
             self.coldstart = [NSNumber numberWithBool:YES];
+            NSLog(@"coldstart: %@", self.launchNotification);
         } else {
             NSLog(@"not coldstart");
             self.coldstart = [NSNumber numberWithBool:NO];
@@ -98,9 +95,12 @@ static char coldstartKey;
     
     if (self.launchNotification) {
         donkyPlugin.coldstart = [self.coldstart boolValue];
+        donkyPlugin.launchNotification = self.launchNotification;
+
+        self.coldstart = [NSNumber numberWithBool:NO];
+        self.launchNotification = nil;
     }
 }
-#endif
 
 - (void)application:(UIApplication *)application didRegisterForRemoteNotificationsWithDeviceToken:(NSData *)deviceToken {
     NSLog(@"AppDelegate(donky)::didRegisterForRemoteNotificationsWithDeviceToken");
@@ -137,15 +137,9 @@ static char coldstartKey;
     
     NSDictionary *dict = [[NSDictionary alloc] initWithObjectsAndKeys: userInfo, @"userInfo", @(state), @"applicationState", nil];
     
-    if([[UIApplication sharedApplication] applicationState] == UIApplicationStateInactive){
-        //TODO: store somewhere that the plugin can access in pluginInitialize - it can then the client
-    }
-    
     DonkyPlugin *donkyPlugin = [self getCommandInstance:@"donky"];
     
     [donkyPlugin notificationReceived: dict];
-    
-    // [DonkyPlugin notify: @"pushNotification" withData: dict];
     
     completionHandler(UIBackgroundFetchResultNewData);
 }
@@ -157,141 +151,14 @@ static char coldstartKey;
 {
     NSLog(@"AppDelegate(donky)::handleActionWithIdentifier");
     
-    UIApplicationState state =[[UIApplication sharedApplication] applicationState];
+    DonkyPlugin *donkyPlugin = [self getCommandInstance:@"donky"];
     
-    NSDictionary *dict = [[NSDictionary alloc] initWithObjectsAndKeys: identifier, @"identifier", userInfo, @"userInfo", @(state), @"applicationState", [DonkyPlugin getCurrentTimestamp], @"clicked", nil];
-
-    /**
-     * Need 3 different behaviours here
-     */
+    [donkyPlugin handleActionWithIdentifier: identifier forRemoteNotification: userInfo];
     
-    switch([[UIApplication sharedApplication] applicationState]){
-        case UIApplicationStateActive:
-            break;
-
-        case UIApplicationStateInactive:
-            // dismissedNotifications can be passed back when init is called
-            break;
-        
-        case UIApplicationStateBackground:
-            // dismissedNotifications can be passed when app resumes ?
-            // not sure I need to do anything here as the JS handleButtonAction code simply sends the analytics result (doesn't display anything)
-            break;
-    }
-    
-    if([[UIApplication sharedApplication] applicationState] != UIApplicationStateActive){
-
-        NSString* action;
-        NSString* link;
-        NSString* label;
-        
-        NSString *inttype = [userInfo objectForKey:@"inttype"];
-        
-        NSString *notificationId = [userInfo objectForKey:@"notificationId"];
-        
-        if([inttype isEqualToString:@"TwoButton"])
-        {
-            NSString *act1 = [userInfo objectForKey:@"act1"];
-            NSString *act2 = [userInfo objectForKey:@"act2"];
-            
-            NSString *lbl1 =[userInfo objectForKey:@"lbl1"];
-            NSString *lbl2 = [userInfo objectForKey:@"lbl2"];
-
-            NSString *link1 =[userInfo objectForKey:@"link1"];
-            NSString *link2 = [userInfo objectForKey:@"link2"];
-            
-            
-            if([identifier isEqualToString:lbl1]){
-                // button 1 clicked
-                NSLog(@"%@ => %@", lbl1, act1);
-                action = act1;
-                link = link1;
-                label = lbl1;
-                
-            }else{
-                // button 2 clicked
-                NSLog(@"%@ => %@", lbl2, act2);
-                action = act2;
-                link = link2;
-                label = lbl2;
-            }
-        }
-        
-        
-        // Coldstart analytics ...
-        // if a button is clicked, how do we report analytics ?
-        // Can store notificationId, action, buttonText and handle in client
-        //  client can download the message
-        
-        // pipe separated JSON ?
-        // {"notificationId": "", "label": "dismiss", "action": "D"}|
-        
-        NSString *savedColdstartNotifications = [[NSUserDefaults standardUserDefaults] stringForKey:@"coldstartNotifications"];
-        
-        NSString *json = [NSString stringWithFormat:@"{\"notificationId\":\"%@\",\"label\":\"%@\",\"action\":\"%@\", \"clicked\":\"%@\"}", notificationId, label, action, [DonkyPlugin getCurrentTimestamp]];
-        
-        NSString *valueToSave;
-        
-        if(savedColdstartNotifications != nil && ![savedColdstartNotifications isEqualToString:@""]){
-            valueToSave = [NSString stringWithFormat:@"%@%@|", savedColdstartNotifications, json];
-        }else{
-            valueToSave = [NSString stringWithFormat:@"%@|", json];
-        }
-        
-        NSLog(@"coldstartNotifications: %@", valueToSave);
-
-        [[NSUserDefaults standardUserDefaults] setObject:valueToSave forKey:@"coldstartNotifications"];
-        [[NSUserDefaults standardUserDefaults] synchronize];
-        
-        
-        // If a dismiss button is clicked (can be either button), need to add to dismissedNotifications and pass back during initialisatiom so client can
-        // ignore the notification when syncing ...
-        if([action isEqualToString:@"Dismiss"])
-        {
-            NSString *savedDismissedNotifications = [[NSUserDefaults standardUserDefaults] stringForKey:@"dismissedNotifications"];
-            
-            NSString *valueToSave;
-            
-            if(savedDismissedNotifications!=nil){
-                valueToSave = [NSString stringWithFormat:@"%@%@,", savedDismissedNotifications, notificationId];
-            }else{
-                valueToSave = [NSString stringWithFormat:@"%@,", notificationId];
-            }
-            
-            [[NSUserDefaults standardUserDefaults] setObject:valueToSave forKey:@"dismissedNotifications"];
-            [[NSUserDefaults standardUserDefaults] synchronize];
-        }
-        else if([action isEqualToString:@"DeepLink"]){
-        
-            // dismissedNotifications needs to be renamed to processedNotifications as we want the same behaviour for
-            
-            if(link != nil && ![link isKindOfClass:[NSNull class]])
-            {
-                NSURL *url = [NSURL URLWithString:link];
-                
-                [DonkyPlugin openDeepLink: url];
-            }
-            
-        }
-        else if([action isEqualToString:@"Open"]){
-        
-            // TODO:
-            
-        }
-        
-    }
-    
-    // NOTE: if I call this when the app is in state UIApplicationStateBackground, it fires when resumed ...
-    
-    if([[UIApplication sharedApplication] applicationState] != UIApplicationStateBackground){
-        [DonkyPlugin notify: @"handleButtonAction" withData: dict];
-    }
-
     completionHandler(UIBackgroundFetchResultNewData);
 }
 
 
-#if _SWIZZLED_INIT_
 // The accessors use an Associative Reference since you can't define a iVar in a category
 // http://developer.apple.com/library/ios/#documentation/cocoa/conceptual/objectivec/Chapters/ocAssociativeReferences.html
 - (NSMutableArray *)launchNotification
@@ -319,6 +186,5 @@ static char coldstartKey;
     self.launchNotification = nil; // clear the association and release the object
     self.coldstart = nil;
 }
-#endif
 
 @end

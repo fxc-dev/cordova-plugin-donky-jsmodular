@@ -1,5 +1,7 @@
 #import <Cordova/CDV.h>
 
+
+
 @interface DonkyPlugin : CDVPlugin
 
 @property (nonatomic, copy) NSString *callbackId;
@@ -14,6 +16,7 @@
 + (NSString*) getCurrentTimestamp;
 
 - (void) notificationReceived:(NSDictionary *)notificationMessage;
+- (void) handleActionWithIdentifier:(NSString *)identifier forRemoteNotification:(NSDictionary *)userInfo;
 
 - (void)didRegisterForRemoteNotificationsWithDeviceToken:(NSData *)deviceToken;
 - (void)didFailToRegisterForRemoteNotificationsWithError:(NSError *)error;
@@ -22,9 +25,7 @@
 
 + (void) notify:(NSString *)event withData:(NSDictionary *)data;
 
-
-#if _SWIZZLED_INIT_
 @property BOOL coldstart;
-#endif
+@property NSDictionary *launchNotification;
 
 @end

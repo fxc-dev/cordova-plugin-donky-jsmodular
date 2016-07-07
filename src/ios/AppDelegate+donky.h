@@ -19,9 +19,7 @@
 
 - (id) getCommandInstance:(NSString*)className;
 
-#if _SWIZZLED_INIT_
 @property (nonatomic, retain) NSDictionary  *launchNotification;
 @property (nonatomic, retain) NSNumber  *coldstart;
-#endif
 
 @end

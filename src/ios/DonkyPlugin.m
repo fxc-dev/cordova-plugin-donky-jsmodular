@@ -23,9 +23,8 @@ static NSString *const DNDeviceID = @"DeviceID";
 @synthesize callbackId;
 static UIWebView* webView;
 
-#if _SWIZZLED_INIT_
 @synthesize coldstart;
-#endif
+@synthesize launchNotification;
 
 - (void) pluginInitialize;
 {
@@ -81,12 +80,6 @@ static UIWebView* webView;
     [devProps setObject:[[NSBundle mainBundle] bundleIdentifier] forKey:@"bundleId"];
     [devProps setObject:deviceId forKey:@"deviceId"];
     
-    NSString * dismissedNotifications = [[NSUserDefaults standardUserDefaults] stringForKey:@"dismissedNotifications"];
-    
-    [devProps setObject:dismissedNotifications != nil ? dismissedNotifications : @"" forKey:@"dismissedNotifications"];
-    
-    [[NSUserDefaults standardUserDefaults] setObject:@"" forKey:@"dismissedNotifications"];
-    [[NSUserDefaults standardUserDefaults] synchronize];
     
     NSString * coldstartNotifications = [[NSUserDefaults standardUserDefaults] stringForKey:@"coldstartNotifications"];
     
@@ -98,9 +91,10 @@ static UIWebView* webView;
     [[NSUserDefaults standardUserDefaults] synchronize];
 
     
-#if _SWIZZLED_INIT_
     [devProps setObject:[NSNumber numberWithBool:[self coldstart]] forKey:@"coldstart"];
-#endif
+    if([self launchNotification] != nil){
+        [devProps setObject:[self launchNotification] forKey:@"launchNotification"];
+    }
     
     NSDateFormatter* dateFormatter = [[NSDateFormatter alloc] init];
     [dateFormatter setLocale:[NSLocale localeWithLocaleIdentifier:@"en_US_POSIX"]];
@@ -307,6 +301,142 @@ static UIWebView* webView;
     [pluginResult setKeepCallbackAsBool:YES];
     [self.commandDelegate sendPluginResult:pluginResult callbackId:self.callbackId];
 }
+
+- (void)handleActionWithIdentifier:(NSString *)identifier forRemoteNotification:(NSDictionary *)userInfo
+{
+    UIApplicationState state =[[UIApplication sharedApplication] applicationState];
+    
+    NSDictionary *dict = [[NSDictionary alloc] initWithObjectsAndKeys: identifier, @"identifier", userInfo, @"userInfo", @(state), @"applicationState", [DonkyPlugin getCurrentTimestamp], @"clicked", nil];
+    
+    /**
+     * Need 3 different behaviours here
+     */
+    
+    switch([[UIApplication sharedApplication] applicationState]){
+        case UIApplicationStateActive:
+            break;
+            
+        case UIApplicationStateInactive:
+            // dismissedNotifications can be passed back when init is called
+            break;
+            
+        case UIApplicationStateBackground:
+            // dismissedNotifications can be passed when app resumes ?
+            // not sure I need to do anything here as the JS handleButtonAction code simply sends the analytics result (doesn't display anything)
+            break;
+    }
+    
+    if([[UIApplication sharedApplication] applicationState] != UIApplicationStateActive){
+        
+        NSString* action;
+        NSString* link;
+        NSString* label;
+        
+        NSString *inttype = [userInfo objectForKey:@"inttype"];
+        
+        NSString *notificationId = [userInfo objectForKey:@"notificationId"];
+        
+        if([inttype isEqualToString:@"TwoButton"])
+        {
+            NSString *act1 = [userInfo objectForKey:@"act1"];
+            NSString *act2 = [userInfo objectForKey:@"act2"];
+            
+            NSString *lbl1 =[userInfo objectForKey:@"lbl1"];
+            NSString *lbl2 = [userInfo objectForKey:@"lbl2"];
+            
+            NSString *link1 =[userInfo objectForKey:@"link1"];
+            NSString *link2 = [userInfo objectForKey:@"link2"];
+            
+            
+            if([identifier isEqualToString:lbl1]){
+                // button 1 clicked
+                NSLog(@"%@ => %@", lbl1, act1);
+                action = act1;
+                link = link1;
+                label = lbl1;
+                
+            }else{
+                // button 2 clicked
+                NSLog(@"%@ => %@", lbl2, act2);
+                action = act2;
+                link = link2;
+                label = lbl2;
+            }
+        }
+        
+        
+        // Coldstart analytics ...
+        // if a button is clicked, how do we report analytics ?
+        // Can store notificationId, action, buttonText and handle in client
+        //  client can download the message
+        
+        // pipe separated JSON ?
+        // {"notificationId": "", "label": "dismiss", "action": "D"}|
+        
+        NSString *savedColdstartNotifications = [[NSUserDefaults standardUserDefaults] stringForKey:@"coldstartNotifications"];
+        
+        NSString *json = [NSString stringWithFormat:@"{\"notificationId\":\"%@\",\"label\":\"%@\",\"action\":\"%@\", \"clicked\":\"%@\"}", notificationId, label, action, [DonkyPlugin getCurrentTimestamp]];
+        
+        NSString *valueToSave;
+        
+        if(savedColdstartNotifications != nil && ![savedColdstartNotifications isEqualToString:@""]){
+            valueToSave = [NSString stringWithFormat:@"%@%@|", savedColdstartNotifications, json];
+        }else{
+            valueToSave = [NSString stringWithFormat:@"%@|", json];
+        }
+        
+        NSLog(@"coldstartNotifications: %@", valueToSave);
+        
+        [[NSUserDefaults standardUserDefaults] setObject:valueToSave forKey:@"coldstartNotifications"];
+        [[NSUserDefaults standardUserDefaults] synchronize];
+        
+        
+        // If a dismiss button is clicked (can be either button), need to add to dismissedNotifications and pass back during initialisatiom so client can
+        // ignore the notification when syncing ...
+        if([action isEqualToString:@"Dismiss"])
+        {
+            NSString *savedDismissedNotifications = [[NSUserDefaults standardUserDefaults] stringForKey:@"dismissedNotifications"];
+            
+            NSString *valueToSave;
+            
+            if(savedDismissedNotifications!=nil){
+                valueToSave = [NSString stringWithFormat:@"%@%@,", savedDismissedNotifications, notificationId];
+            }else{
+                valueToSave = [NSString stringWithFormat:@"%@,", notificationId];
+            }
+            
+            [[NSUserDefaults standardUserDefaults] setObject:valueToSave forKey:@"dismissedNotifications"];
+            [[NSUserDefaults standardUserDefaults] synchronize];
+        }
+        else if([action isEqualToString:@"DeepLink"]){
+            
+            // dismissedNotifications needs to be renamed to processedNotifications as we want the same behaviour for
+            
+            if(link != nil && ![link isKindOfClass:[NSNull class]])
+            {
+                NSURL *url = [NSURL URLWithString:link];
+                
+                [DonkyPlugin openDeepLink: url];
+            }
+            
+        }
+        else if([action isEqualToString:@"Open"]){
+            
+            // TODO:
+            
+        }
+        
+    }
+
+    // NOTE: if I call this when the app is in state UIApplicationStateBackground, it fires when resumed ...
+    
+    if([[UIApplication sharedApplication] applicationState] != UIApplicationStateBackground){
+        [DonkyPlugin notify: @"handleButtonAction" withData: dict];
+    }
+    
+    
+}
+
 
 + (void) executeJavascript:(NSString *)jsString{
 
