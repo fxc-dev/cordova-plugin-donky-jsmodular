@@ -358,7 +358,7 @@ function DonkyPlugin(){
                 
                 switch( self.platform ){
                     case "iOS":
-                        if(result.userInfo.notificationId !== undefind){
+                        if(result.userInfo.notificationId !== undefined){
                             procesAPNSPushMessage(result.userInfo.notificationId, result.applicationState);
                         }
                     break;

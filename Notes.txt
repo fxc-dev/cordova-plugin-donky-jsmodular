@@ -1,33 +1,64 @@
-Post code complete tsting issues
-================================
+
+Testplan
+-=-=-=-=-
 
 
-iOS push registration if user doesn't allow notifications ...
+Functional areas to test:
 
-scenarions
+Device registration
+    - check deviceId is reused correctly between installs on iOS (16BC1821-9F89-423A-863C-D8E5E231513C for SL Cordova Test)
+        - works ok ;-)
+    - check operating system is set correctly
+        - works ok ;-)
+
+    - analytics
+        - check audience in DC (https://stage-control.mobiledonky.com/UserPortal/Analytics/Audience)
+
+        - check activity in DC (https://stage-control.mobiledonky.com/UserPortal/Analytics/Activity)
+            - check that device is generating a onventional launch when it is fired up 
+
+Simple push
+    - iOS badge count
+        - Enable badge count
+        - Device managed badge
+
+    - make sure tapping a asic simple push message opens the app if it is: 
+        - backgrounded
+        - not currently running
+    - ensure the message is not re-displayed in above cases when tha app fires up
+
+    - ensure message is displayed in-app if the app is running when the push arrives
+
+    - analytics
+        - check activity in DC (https://stage-control.mobiledonky.com/UserPortal/Analytics/Activity)
+            - check that device is generating an influenced launch when push message is tapped 
 
 
-1) App is installed and first time it is launched user hits don't allow
 
-    registerForPush() called
+Interactive push
+    - dismiss behavoiur
 
-    in delegate didRegisterForRemoteNotificationsWithDeviceToken with a token AND popup visible
+    - open app behaviour
+        - check that device is generating an influenced launch when push message is tapped 
+    
+    - open deep link behaviour
 
-    in didRegisterUserNotificationSettings with notificationSettings.types false
+    - analytics
+        - https://stage-control.mobiledonky.com/UserPortal/Analytics/CampaignSummarySimplePush
+            - ensure button clicks are correctly represented for a given campaign
+            - check that device is generating an influenced launch when push message is tapped 
 
-2) subsequent launch of the app (with push still off)
+Rich Messaging
 
-    registerForPush() called
+    - analytics
+        - https://stage-control.mobiledonky.com/UserPortal/Analytics/CampaignSummaryRich
+        - check that device is generating an influenced launch when push message is tapped 
+        - check that device is generating a correct read status ?
 
-    didRegisterUserNotificationSettings  with notificationSettings.types false
+Core Location
 
-3) User goes into settings and turns  on push 
+    - ensure last known location in DC is as expected
 
-    registerForPush() called
 
-    didRegisterForRemoteNotificationsWithDeviceToken delegate fires
 
-    didRegisterUserNotificationSettings fires with notificationSettings.types TRUE
-
-4) User goes into settings and turns off push
 
