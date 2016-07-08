@@ -59,90 +59,97 @@ static UIWebView* webView;
 
 - (void)initialise:(CDVInvokedUrlCommand*)command
 {
-    NSLog(@"Donky::getPlatformInfo");
-    NSString *deviceId = [DNKeychainHelper objectForKey:DNDeviceID];
-    NSLog(@"DNKeychainHelper returned deviceId: %@", deviceId);
     
-    if(deviceId == nil){
-        deviceId = [PushHelper generateGUID];
-        NSLog(@"Created a new GUID for the deviceId : %@", deviceId);
-        [DNKeychainHelper saveObjectToKeychain:deviceId withKey:DNDeviceID];
-    }
-    
-    UIDevice* device = [UIDevice currentDevice];
-    NSMutableDictionary* devProps = [[NSMutableDictionary alloc] init];
-    
-    [devProps setObject:@"Apple" forKey:@"manufacturer"];
-    [devProps setObject:[self modelVersion] forKey:@"model"];
-    [devProps setObject:@"iOS" forKey:@"platform"];
-    [devProps setObject:[device systemVersion] forKey:@"version"];
-    [devProps setObject:CDV_VERSION forKey:@"cordova"];
-    [devProps setObject:[[NSBundle mainBundle] bundleIdentifier] forKey:@"bundleId"];
-    [devProps setObject:deviceId forKey:@"deviceId"];
-    
-    
+    // Check command.arguments here.
+    [self.commandDelegate runInBackground:^{
 
-    
-    [devProps setObject:[NSNumber numberWithBool:[self coldstart]] forKey:@"coldstart"];
-    if([self launchNotification] != nil){
+        NSLog(@"Donky::getPlatformInfo");
+        NSString *deviceId = [DNKeychainHelper objectForKey:DNDeviceID];
+        NSLog(@"DNKeychainHelper returned deviceId: %@", deviceId);
         
-        NSString *inttype = [launchNotification objectForKey:@"inttype"];
+        if(deviceId == nil){
+            deviceId = [PushHelper generateGUID];
+            NSLog(@"Created a new GUID for the deviceId : %@", deviceId);
+            [DNKeychainHelper saveObjectToKeychain:deviceId withKey:DNDeviceID];
+        }
         
-        NSLog(@"inttype: %@", inttype);
+        UIDevice* device = [UIDevice currentDevice];
+        NSMutableDictionary* devProps = [[NSMutableDictionary alloc] init];
+        
+        [devProps setObject:@"Apple" forKey:@"manufacturer"];
+        [devProps setObject:[self modelVersion] forKey:@"model"];
+        [devProps setObject:@"iOS" forKey:@"platform"];
+        [devProps setObject:[device systemVersion] forKey:@"version"];
+        [devProps setObject:CDV_VERSION forKey:@"cordova"];
+        [devProps setObject:[[NSBundle mainBundle] bundleIdentifier] forKey:@"bundleId"];
+        [devProps setObject:deviceId forKey:@"deviceId"];
         
         
-        NSString *notificationId = [launchNotification objectForKey:@"notificationId"];
         
-        NSString *notificationType = [launchNotification objectForKey:@"notificationType"];
         
-        if([notificationType isEqualToString:@"SIMPLEPUSHMSG"]){
+        [devProps setObject:[NSNumber numberWithBool:[self coldstart]] forKey:@"coldstart"];
+        if([self launchNotification] != nil){
             
-            // need to determine whether this notification is interactive or not first ...
-            if([inttype isEqualToString:@"OneButton"]){
-                NSLog(@"OneButton push ;-)");
-                NSString *label = [launchNotification objectForKey:@"lbl1"];
-                NSString *action = [launchNotification objectForKey:@"act1"];
-                NSString *link1 = [launchNotification objectForKey:@"link1"];
+            NSString *inttype = [launchNotification objectForKey:@"inttype"];
+            
+            NSLog(@"inttype: %@", inttype);
+            
+            
+            NSString *notificationId = [launchNotification objectForKey:@"notificationId"];
+            
+            NSString *notificationType = [launchNotification objectForKey:@"notificationType"];
+            
+            if([notificationType isEqualToString:@"SIMPLEPUSHMSG"]){
                 
-                [self addColdstartNotification: notificationId :label :action];
-                
-                // if we have a 1 button push that is supposed to open a deep link, should I process it here of give it to the app to deal with ?
-                if([action isEqualToString:@"DeepLink"]){
+                // need to determine whether this notification is interactive or not first ...
+                if([inttype isEqualToString:@"OneButton"]){
+                    NSLog(@"OneButton push ;-)");
+                    NSString *label = [launchNotification objectForKey:@"lbl1"];
+                    NSString *action = [launchNotification objectForKey:@"act1"];
+                    NSString *link1 = [launchNotification objectForKey:@"link1"];
                     
-                    if(link1 != nil && ![link1 isKindOfClass:[NSNull class]])
-                    {
-                        NSURL *url = [NSURL URLWithString:link1];
-                        [DonkyPlugin openDeepLink: url];
+                    [self addColdstartNotification: notificationId :label :action];
+                    
+                    // if we have a 1 button push that is supposed to open a deep link, should I process it here of give it to the app to deal with ?
+                    if([action isEqualToString:@"DeepLink"]){
+                        
+                        if(link1 != nil && ![link1 isKindOfClass:[NSNull class]])
+                        {
+                            NSURL *url = [NSURL URLWithString:link1];
+                            [DonkyPlugin openDeepLink: url];
+                        }
                     }
+                    
+                }else{
+                    [self addColdstartNotification: notificationId :nil :nil];
                 }
                 
-            }else{
-                [self addColdstartNotification: notificationId :nil :nil];
+                
             }
-            
-            
+            [devProps setObject:[self launchNotification] forKey:@"launchNotification"];
         }
-        [devProps setObject:[self launchNotification] forKey:@"launchNotification"];
-    }
-    
-    NSString * coldstartNotifications = [[NSUserDefaults standardUserDefaults] stringForKey:@"coldstartNotifications"];
-    
-    NSLog(@"Setting coldstartNotifications to %@", coldstartNotifications);
-    
-    [devProps setObject:coldstartNotifications != nil ? coldstartNotifications : @"" forKey:@"coldstartNotifications"];
-    
-    [[NSUserDefaults standardUserDefaults] setObject:@"" forKey:@"coldstartNotifications"];
-    [[NSUserDefaults standardUserDefaults] synchronize];
-    
-    
-    NSDateFormatter* dateFormatter = [[NSDateFormatter alloc] init];
-    [dateFormatter setLocale:[NSLocale localeWithLocaleIdentifier:@"en_US_POSIX"]];
-    [dateFormatter setDateFormat:@"yyyy-MM-dd'T'HH:mm:ssZZZZZ"];
-    [devProps setObject:[DonkyPlugin getCurrentTimestamp] forKey:@"launchTimeUtc"];
+        
+        NSString * coldstartNotifications = [[NSUserDefaults standardUserDefaults] stringForKey:@"coldstartNotifications"];
+        
+        NSLog(@"Setting coldstartNotifications to %@", coldstartNotifications);
+        
+        [devProps setObject:coldstartNotifications != nil ? coldstartNotifications : @"" forKey:@"coldstartNotifications"];
+        
+        [[NSUserDefaults standardUserDefaults] setObject:@"" forKey:@"coldstartNotifications"];
+        [[NSUserDefaults standardUserDefaults] synchronize];
+        
+        
+        NSDateFormatter* dateFormatter = [[NSDateFormatter alloc] init];
+        [dateFormatter setLocale:[NSLocale localeWithLocaleIdentifier:@"en_US_POSIX"]];
+        [dateFormatter setDateFormat:@"yyyy-MM-dd'T'HH:mm:ssZZZZZ"];
+        [devProps setObject:[DonkyPlugin getCurrentTimestamp] forKey:@"launchTimeUtc"];
+        
+        CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:devProps];
+        
+        [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+    }];
+        
 
-    CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:devProps];
-
-    [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
 }
 
 - (void)hasPermission:(CDVInvokedUrlCommand *)command
