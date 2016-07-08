@@ -179,8 +179,10 @@ function DonkyPlugin(){
     /**
      * 
      */
-    function procesAPNSPushMessage(notificationId, applicationState){
+    function procesAPNSPushMessage(userInfo/*notificationId*/, applicationState){
         
+        var notificationId = userInfo.notificationId;
+
         if(self.applicationStateOnPush === undefined){
             self.applicationStateOnPush = applicationState;                    
         }
@@ -194,7 +196,15 @@ function DonkyPlugin(){
                     if( notification.type === "SimplePushMessage" && applicationState !== AppStates.active){
                         donkyCore.addNotificationToRecentCache(notification.id);
                         // TODO: need to TEST this ...
-                        donkyCore._queueAcknowledgement(notification, "Delivered");                            
+                        // Not sure I ned to do this as it will be acknowledged anyway ...
+                        donkyCore._queueAcknowledgement(notification, "Delivered");       
+                        // TODO: need to see if this was a OneButton (need to change messag sig as only got the id atm)
+                        // can just call handle button action with  
+
+                        if(userInfo.inttype === "OneButton"){
+                            handleButtonAction(notificationId, userInfo.lbl1, new Date().toISOString(), false);
+                        }
+
                     }else{
                         donkyCore._processServerNotifications([notification]);    
                     }
@@ -359,7 +369,7 @@ function DonkyPlugin(){
                 switch( self.platform ){
                     case "iOS":
                         if(result.userInfo.notificationId !== undefined){
-                            procesAPNSPushMessage(result.userInfo.notificationId, result.applicationState);
+                            procesAPNSPushMessage(result.userInfo/*.notificationId*/, result.applicationState);
                         }
                     break;
                     
