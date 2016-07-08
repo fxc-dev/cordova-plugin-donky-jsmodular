@@ -81,20 +81,59 @@ static UIWebView* webView;
     [devProps setObject:deviceId forKey:@"deviceId"];
     
     
-    NSString * coldstartNotifications = [[NSUserDefaults standardUserDefaults] stringForKey:@"coldstartNotifications"];
-    
-    NSLog(@"Setting coldstartNotifications to %@", coldstartNotifications);
-
-    [devProps setObject:coldstartNotifications != nil ? coldstartNotifications : @"" forKey:@"coldstartNotifications"];
-    
-    [[NSUserDefaults standardUserDefaults] setObject:@"" forKey:@"coldstartNotifications"];
-    [[NSUserDefaults standardUserDefaults] synchronize];
 
     
     [devProps setObject:[NSNumber numberWithBool:[self coldstart]] forKey:@"coldstart"];
     if([self launchNotification] != nil){
+        
+        NSString *inttype = [launchNotification objectForKey:@"inttype"];
+        
+        NSLog(@"inttype: %@", inttype);
+        
+        
+        NSString *notificationId = [launchNotification objectForKey:@"notificationId"];
+        
+        NSString *notificationType = [launchNotification objectForKey:@"notificationType"];
+        
+        if([notificationType isEqualToString:@"SIMPLEPUSHMSG"]){
+            
+            // need to determine whether this notification is interactive or not first ...
+            if([inttype isEqualToString:@"OneButton"]){
+                NSLog(@"OneButton push ;-)");
+                NSString *label = [launchNotification objectForKey:@"lbl1"];
+                NSString *action = [launchNotification objectForKey:@"act1"];
+                NSString *link1 = [launchNotification objectForKey:@"link1"];
+                
+                [self addColdstartNotification: notificationId :label :action];
+                
+                // if we have a 1 button push that is supposed to open a deep link, should I process it here of give it to the app to deal with ?
+                if([action isEqualToString:@"DeepLink"]){
+                    
+                    if(link1 != nil && ![link1 isKindOfClass:[NSNull class]])
+                    {
+                        NSURL *url = [NSURL URLWithString:link1];
+                        [DonkyPlugin openDeepLink: url];
+                    }
+                }
+                
+            }else{
+                [self addColdstartNotification: notificationId :nil :nil];
+            }
+            
+            
+        }
         [devProps setObject:[self launchNotification] forKey:@"launchNotification"];
     }
+    
+    NSString * coldstartNotifications = [[NSUserDefaults standardUserDefaults] stringForKey:@"coldstartNotifications"];
+    
+    NSLog(@"Setting coldstartNotifications to %@", coldstartNotifications);
+    
+    [devProps setObject:coldstartNotifications != nil ? coldstartNotifications : @"" forKey:@"coldstartNotifications"];
+    
+    [[NSUserDefaults standardUserDefaults] setObject:@"" forKey:@"coldstartNotifications"];
+    [[NSUserDefaults standardUserDefaults] synchronize];
+    
     
     NSDateFormatter* dateFormatter = [[NSDateFormatter alloc] init];
     [dateFormatter setLocale:[NSLocale localeWithLocaleIdentifier:@"en_US_POSIX"]];
@@ -364,51 +403,10 @@ static UIWebView* webView;
             }
         }
         
-        
-        // Coldstart analytics ...
-        // if a button is clicked, how do we report analytics ?
-        // Can store notificationId, action, buttonText and handle in client
-        //  client can download the message
-        
-        // pipe separated JSON ?
-        // {"notificationId": "", "label": "dismiss", "action": "D"}|
-        
-        NSString *savedColdstartNotifications = [[NSUserDefaults standardUserDefaults] stringForKey:@"coldstartNotifications"];
-        
-        NSString *json = [NSString stringWithFormat:@"{\"notificationId\":\"%@\",\"label\":\"%@\",\"action\":\"%@\", \"clicked\":\"%@\"}", notificationId, label, action, [DonkyPlugin getCurrentTimestamp]];
-        
-        NSString *valueToSave;
-        
-        if(savedColdstartNotifications != nil && ![savedColdstartNotifications isEqualToString:@""]){
-            valueToSave = [NSString stringWithFormat:@"%@%@|", savedColdstartNotifications, json];
-        }else{
-            valueToSave = [NSString stringWithFormat:@"%@|", json];
-        }
-        
-        NSLog(@"coldstartNotifications: %@", valueToSave);
-        
-        [[NSUserDefaults standardUserDefaults] setObject:valueToSave forKey:@"coldstartNotifications"];
-        [[NSUserDefaults standardUserDefaults] synchronize];
+        [self addColdstartNotification: notificationId :label :action];
         
         
-        // If a dismiss button is clicked (can be either button), need to add to dismissedNotifications and pass back during initialisatiom so client can
-        // ignore the notification when syncing ...
-        if([action isEqualToString:@"Dismiss"])
-        {
-            NSString *savedDismissedNotifications = [[NSUserDefaults standardUserDefaults] stringForKey:@"dismissedNotifications"];
-            
-            NSString *valueToSave;
-            
-            if(savedDismissedNotifications!=nil){
-                valueToSave = [NSString stringWithFormat:@"%@%@,", savedDismissedNotifications, notificationId];
-            }else{
-                valueToSave = [NSString stringWithFormat:@"%@,", notificationId];
-            }
-            
-            [[NSUserDefaults standardUserDefaults] setObject:valueToSave forKey:@"dismissedNotifications"];
-            [[NSUserDefaults standardUserDefaults] synchronize];
-        }
-        else if([action isEqualToString:@"DeepLink"]){
+        if([action isEqualToString:@"DeepLink"]){
             
             // dismissedNotifications needs to be renamed to processedNotifications as we want the same behaviour for
             
@@ -420,12 +418,6 @@ static UIWebView* webView;
             }
             
         }
-        else if([action isEqualToString:@"Open"]){
-            
-            // TODO:
-            
-        }
-        
     }
 
     // NOTE: if I call this when the app is in state UIApplicationStateBackground, it fires when resumed ...
@@ -435,6 +427,38 @@ static UIWebView* webView;
     }
     
     
+}
+
+
+// {"notificationId": "", "label": "dismiss", "action": "D"}|
+- (void) addColdstartNotification :(NSString *)notificationId :(NSString *) label :(NSString *) action{
+
+    NSString *savedColdstartNotifications = [[NSUserDefaults standardUserDefaults] stringForKey:@"coldstartNotifications"];
+    
+    NSString *json;
+    
+    if(label!=nil){
+        json = [NSString stringWithFormat:@"{\"notificationId\":\"%@\",\"label\":\"%@\",\"action\":\"%@\", \"clicked\":\"%@\"}", notificationId, label, action, [DonkyPlugin getCurrentTimestamp]];
+    }else{
+        json = [NSString stringWithFormat:@"{\"notificationId\":\"%@\", \"clicked\":\"%@\"}", notificationId, [DonkyPlugin getCurrentTimestamp]];
+    }
+    
+    NSLog(@"addColdstartNotification: %@", json);
+    
+    NSString *valueToSave;
+    
+    if(savedColdstartNotifications != nil && ![savedColdstartNotifications isEqualToString:@""]){
+        valueToSave = [NSString stringWithFormat:@"%@%@|", savedColdstartNotifications, json];
+    }else{
+        valueToSave = [NSString stringWithFormat:@"%@|", json];
+    }
+    
+    NSLog(@"coldstartNotifications: %@", valueToSave);
+    
+    [[NSUserDefaults standardUserDefaults] setObject:valueToSave forKey:@"coldstartNotifications"];
+    [[NSUserDefaults standardUserDefaults] synchronize];
+
+
 }
 
 

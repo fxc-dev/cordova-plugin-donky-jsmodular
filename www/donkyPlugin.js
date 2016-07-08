@@ -450,7 +450,10 @@ function DonkyPlugin(){
         if(notifications){
 
             donkyCore._each(notifications, function(index, notification){
-                handleButtonAction(notification.notificationId, notification.label, notification.clicked, false);
+                // there may be non-interactive push messages in here, in which case ignore
+                if(notification.label !== undefined & notification.label !== null){
+                    handleButtonAction(notification.notificationId, notification.label, notification.clicked, false);
+                }
             });
 
             localStorage.removeItem("coldstartNotifications");
