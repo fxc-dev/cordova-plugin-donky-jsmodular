@@ -161,6 +161,8 @@ public class GCMIntentService extends GcmListenerService implements PushConstant
         String icon = sharedPref.getString("icon", "");
         String iconColor = sharedPref.getString("iconColor", "");
 
+        Boolean silent = false;
+
         Log.d(LOG_TAG, "SharedPreferences::environment = " + environment);
         Log.d(LOG_TAG, "SharedPreferences::vibrate = " + vibrate);
         Log.d(LOG_TAG, "SharedPreferences::icon = " + icon);
@@ -186,7 +188,9 @@ public class GCMIntentService extends GcmListenerService implements PushConstant
 
         try {
             JSONObject jsonObj = new JSONObject(payload);
-            messageType =jsonObj.optString("messageType");
+            messageType = jsonObj.optString("messageType");
+
+            silent = jsonObj.optBoolean("silentNotification", false);
 
             senderDisplayName = jsonObj.optString("senderDisplayName");
             avatarAssetId = jsonObj.optString("avatarAssetId", null);
@@ -229,7 +233,7 @@ public class GCMIntentService extends GcmListenerService implements PushConstant
         Log.d(LOG_TAG, "body = " + body);
         Log.d(LOG_TAG, "senderDisplayName = " + senderDisplayName);
 
-        if(canDisplay){
+        if(canDisplay && !silent){
 
             NotificationManager mNotificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
             String appName = (String) context.getPackageManager().getApplicationLabel(context.getApplicationInfo());

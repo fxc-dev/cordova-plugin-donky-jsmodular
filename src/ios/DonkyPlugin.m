@@ -314,9 +314,9 @@ static UIWebView* webView;
     {
         NSURL *url = [NSURL URLWithString:linkValue];
         
-        Boolean opened = [DonkyPlugin openDeepLink: url];
+        Boolean canOpen = [DonkyPlugin openDeepLink: url];
         
-        pluginResult = opened ? [CDVPluginResult resultWithStatus:CDVCommandStatus_OK] : [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR];
+        pluginResult = canOpen ? [CDVPluginResult resultWithStatus:CDVCommandStatus_OK] : [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR];
     }
     else
     {
@@ -329,8 +329,19 @@ static UIWebView* webView;
 + (Boolean)openDeepLink:(NSURL*)url;
 {
     NSLog(@"handleDeepLink: Opening link: %@", url);
+
+    Boolean canOpen = [[UIApplication sharedApplication] canOpenURL:url];
     
-    return [[UIApplication sharedApplication] openURL:url];
+    if (canOpen) {
+        dispatch_async(dispatch_get_main_queue(), ^{
+            [[UIApplication sharedApplication] openURL:url];
+        });
+    }
+    else {
+        NSLog(@"Cannot open URL: %@", url);
+    }
+    
+    return canOpen;
 }
 
 - (void)notificationReceived:(NSDictionary *)notificationMessage;
