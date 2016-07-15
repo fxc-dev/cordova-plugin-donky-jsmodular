@@ -32,30 +32,32 @@ function DonkyPlugin(){
 
     var self = this;
 
-    // TODO: need to ensure this is called if an interactive  push is received and the dismiss button is clicked (for iOS)  
     function syncBadgeCount(){
-        // set badge count 
         
-        var badgeCount = 0;
+        if(self.platform === "iOS" ){
 
-        if(window.donkyPushLogic){
-            var pushCount = donkyPushLogic.getMessageCount();
-            pluginLog("pushCount: " + pushCount ); 
-            badgeCount += pushCount;                                        
-        }                                
-        
-        if(window.donkyRichLogic){
-            var unreadRichCount = donkyRichLogic.getMessageCount().unreadRichMessageCount
-            pluginLog("unreadRichCount: " + unreadRichCount ); 
-            badgeCount += unreadRichCount;                                        
-        }                                
-                                
-        if(window.donkyMessagingCommon){
-            pluginLog("setBadgeCount(" + badgeCount + ")");
-            donkyMessagingCommon.setBadgeCount(badgeCount, true);                            
+            var badgeCount = 0;
+
+            if(window.donkyPushLogic){
+                var pushCount = donkyPushLogic.getMessageCount();
+                pluginLog("pushCount: " + pushCount ); 
+                badgeCount += pushCount;                                        
+            }                                
+            
+            if(window.donkyRichLogic){
+                var unreadRichCount = donkyRichLogic.getMessageCount().unreadRichMessageCount
+                pluginLog("unreadRichCount: " + unreadRichCount ); 
+                badgeCount += unreadRichCount;                                        
+            }                                
+                                    
+            if(window.donkyMessagingCommon){
+                pluginLog("setBadgeCount(" + badgeCount + ")");
+                donkyMessagingCommon.setBadgeCount(badgeCount, true);                            
+            }
+            
+            self.setBadgeCount(function(){},function(){},badgeCount);        
         }
-        
-        self.setBadgeCount(function(){},function(){},badgeCount);        
+
     }
 
     /**
@@ -179,7 +181,7 @@ function DonkyPlugin(){
     /**
      * 
      */
-    function procesAPNSPushMessage(userInfo/*notificationId*/, applicationState){
+    function procesAPNSPushMessage(userInfo, applicationState){
         
         var notificationId = userInfo.notificationId;
 
@@ -221,7 +223,7 @@ function DonkyPlugin(){
      * 
      */
     function handleButtonAction(notificationId, buttonText, clicked, addToRecent){
-        // If SDK not initialised, we can't make rest calls (even if we have a token)  should I change this ?            
+        // If SDK not initialised, we can't make rest calls (even if we have a token)            
         if(donkyCore.isInitialised()){
 
             if(addToRecent){
@@ -440,12 +442,10 @@ function DonkyPlugin(){
                     }
 
                 });
-                // localStorage.removeItem("coldstartNotifications");
             }
             
             // These need to be picked up when we see the donkyInitialised event 
-            localStorage.setItem("coldstartNotifications", JSON.stringify(coldStartActions));
-            
+            localStorage.setItem("coldstartNotifications", JSON.stringify(coldStartActions));            
         }
 
     }
