@@ -346,7 +346,7 @@ function DonkyPlugin(){
                 pluginLog("sending push Configuration: " + JSON.stringify(pushConfig, null, 4));
 
                 donkyCore.donkyAccount.sendPushConfiguration(pushConfig, function(result){            
-                    pluginLog("sendPushConfiguration result: " + JSON.stringify(result, null, 4));
+                    pluginLog("sendPushConfiguration result: " + JSON.stringify(result, null, 4));                    
                 });                                    
             }        
         }else{
@@ -364,14 +364,15 @@ function DonkyPlugin(){
             pluginLog("registerForPush success callback: " + JSON.stringify(result));
 
             // success callback re-used for push notifications and returning device token                                                 
-            if(result.deviceToken){                            
-                sendPushConfiguration(result.deviceToken);                            
+            if(result.deviceToken){
+                sendPushConfiguration(result.deviceToken);
+                donkyCore.publishLocalEvent({ type: "registerForPush", data: {succeded: true, token: result.deviceToken} });
             }else{
-                
+
                 switch( self.platform ){
                     case "iOS":
                         if(result.userInfo.notificationId !== undefined){
-                            procesAPNSPushMessage(result.userInfo/*.notificationId*/, result.applicationState);
+                            procesAPNSPushMessage(result.userInfo, result.applicationState);
                         }
                     break;
                     
@@ -383,11 +384,12 @@ function DonkyPlugin(){
                     case "Android":
                         procesGCMPushMessage(result);
                     break;
-                } 
+                }
             }
                                                             
         }, function(error){
             pluginLog("registerForPush failed" + JSON.stringify(error));
+            donkyCore.publishLocalEvent({ type: "registerForPush", data: {succeded: false, error: error} });
         },
         "donky", "registerForPush",
         self.platform === "iOS" ? [JSON.stringify(donkyCore.getiOSButtonCategories())] : []);
