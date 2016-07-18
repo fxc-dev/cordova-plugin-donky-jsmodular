@@ -15,7 +15,7 @@ xmlns="http://apache.org/cordova/ns/plugins/1.0"
     </js-module>
 
 
-    <preference name="SENDER_ID" />
+    <preference name="SENDER_ID" default="_DONKY_DEFAULT_" />
 
     <!-- android -->
     <platform name="android">

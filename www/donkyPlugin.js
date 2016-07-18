@@ -359,6 +359,8 @@ function DonkyPlugin(){
      */
     function doPushRegistation(){
 
+        var configuration = donkyCore.donkyData.get("configuration");
+
         // Assumption is that Donky is initialised now as we need the button sets
         cordova.exec(function(result){
             pluginLog("registerForPush success callback: " + JSON.stringify(result));
@@ -392,7 +394,7 @@ function DonkyPlugin(){
             donkyCore.publishLocalEvent({ type: "registerForPush", data: {succeded: false, error: error} });
         },
         "donky", "registerForPush",
-        self.platform === "iOS" ? [JSON.stringify(donkyCore.getiOSButtonCategories())] : []);
+        self.platform === "iOS" ? [JSON.stringify(donkyCore.getiOSButtonCategories())] : [configuration.configurationItems.DefaultGCMSenderId]);
 
     }
 

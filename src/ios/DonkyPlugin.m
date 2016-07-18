@@ -84,16 +84,12 @@ static UIWebView* webView;
         [devProps setObject:[[NSBundle mainBundle] bundleIdentifier] forKey:@"bundleId"];
         [devProps setObject:deviceId forKey:@"deviceId"];
         
-        
-        
-        
         [devProps setObject:[NSNumber numberWithBool:[self coldstart]] forKey:@"coldstart"];
         if([self launchNotification] != nil){
             
             NSString *inttype = [launchNotification objectForKey:@"inttype"];
             
             NSLog(@"inttype: %@", inttype);
-            
             
             NSString *notificationId = [launchNotification objectForKey:@"notificationId"];
             

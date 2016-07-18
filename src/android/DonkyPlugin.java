@@ -202,10 +202,21 @@ public class DonkyPlugin extends CordovaPlugin implements PushConstants{
         }
         else if(action.equals("registerForPush")){
 
+
             cordova.getThreadPool().execute(new Runnable() {
                 public void run() {
                     pushContext = callbackContext;
 
+                    String defaultSenderID = null;
+
+                    try{
+                        defaultSenderID = data.getString(0);
+                    } catch (JSONException e) {
+                        Log.e(LOG_TAG, "execute: defaultSenderID not passed " + e.getMessage());
+                        callbackContext.error(e.getMessage());
+                        return;
+                    }
+                    
                     String senderID = "";
 
                     Integer identifier = getApplicationContext().getResources().getIdentifier("sender_id", "string", getApplicationContext().getPackageName());
@@ -213,6 +224,13 @@ public class DonkyPlugin extends CordovaPlugin implements PushConstants{
                     if(identifier!=0){
                         senderID = getApplicationContext().getResources().getString(identifier);
                         Log.v(LOG_TAG, "senderID: " + senderID);
+                    }
+
+                    // magic string which is the default value for the SENDER_ID preference
+                    // in this case, use the defaultSenderID specified in donky Configuration.
+                    // This maps to "Donky deault" option in DOnky Control ... 
+                    if("_DONKY_DEFAULT_".equals(senderID)){
+                        senderID = defaultSenderID;
                     }
 
                     if(!"".equals(senderID)){
