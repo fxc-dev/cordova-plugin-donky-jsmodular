@@ -45,7 +45,7 @@ function DonkyPlugin(){
             }                                
             
             if(window.donkyRichLogic){
-                var unreadRichCount = donkyRichLogic.getMessageCount().unreadRichMessageCount
+                var unreadRichCount = donkyRichLogic.getMessageCount().unreadRichMessageCount;
                 pluginLog("unreadRichCount: " + unreadRichCount ); 
                 badgeCount += unreadRichCount;                                        
             }                                
@@ -95,6 +95,8 @@ function DonkyPlugin(){
         pluginLog("queueAppLaunch: " + JSON.stringify(launchClientNotification));
 
         donkyCore.queueClientNotifications(launchClientNotification);
+
+        donkyCore.donkyNetwork.synchronise(function(result) {});
     }         
 
     /**
@@ -167,7 +169,6 @@ function DonkyPlugin(){
 
                     if( result.additionalData.notificationType === "SimplePushMessage" && applicationState !== AppStates.active){
                         donkyCore.addNotificationToRecentCache(notification.id);
-                        // TODO: need to TEST this ...
                         donkyCore._queueAcknowledgement(notification, "Delivered");
                     }
                     else{
@@ -305,8 +306,15 @@ function DonkyPlugin(){
          */
         donkyCore.subscribeToLocalEvent("RichMessageRead", function (event) {
             syncBadgeCount();
-        });                
+        });         
 
+        /**
+         * 
+         */
+        donkyCore.subscribeToLocalEvent("RichMessageDeleted", function (event) {
+            syncBadgeCount();
+        });         
+               
         /**
          * A button has been clicked (iOS)
          * App stae would have been UIApplicationStateInactive
@@ -322,17 +330,36 @@ function DonkyPlugin(){
 
             handleButtonAction(notificationId, buttonText, clicked, true);
             
-        });     
+        });
+
+        /**
+         * 
+         */
+        donkyCore.subscribeToLocalEvent("RegistrationChanged", function (event) {
+            pluginLog("RegistrationChanged", JSON.stringify(event.data, null, 4));
+
+            // need to re-submit the push token (same token will be used)
+            sendPushConfiguration();   
+        });         
+        
+
     }
 
     /**
      * 
      */
     function sendPushConfiguration(deviceToken){
-        var pushConfig = {
-            registrationId : deviceToken,
-            // will be undefined on Android
-            bundleId : self.bundleId
+
+        var pushConfig;
+
+        if(deviceToken){
+            pushConfig = {
+                registrationId : deviceToken,
+                // will be undefined on Android
+                bundleId : self.bundleId
+            }
+        }else{
+            pushConfig = donkyCore.donkyData.get("pushConfig"); 
         }
 
         if(window.donkyCore){
@@ -479,12 +506,11 @@ function DonkyPlugin(){
      */
     function onDonkyInitialised(){
 
+        queueColdstartAnalytics();        
+
         queueAppLaunch();
 
         doPushRegistation();
-
-        queueColdstartAnalytics();
-
     }
 
     /**
