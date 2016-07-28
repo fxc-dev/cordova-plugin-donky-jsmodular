@@ -129,7 +129,7 @@ function DonkyPlugin(){
     /**
      *
      */                
-    function procesGCMPushMessage(result){
+    function processGCMPushMessage(result){
 
         var notificationId = result.additionalData.notificationId;
 
@@ -142,38 +142,47 @@ function DonkyPlugin(){
             }
 
             if(!donkyCore.findNotificationInRecentCache(notificationId)){
-                // need to synthesise a server notification so we can call _processServerNotifications() if neessary ...                    
-                var notification = {
-                    id: notificationId,
-                    type: result.additionalData.notificationType,
-                    data: result.additionalData.payload,
-                    createdOn: result.additionalData.notificationCreatedOn ? result.additionalData.notificationCreatedOn : new Date().toISOString()
-                };
-                
-                // Is this a button click                                        
-                if(result.additionalData.ButtonClicked){
-                    
-                    pluginLog("procesGCMPushMessage: ButtonClicked=" + result.additionalData.ButtonClicked);
-                    
-                    donkyCore.addNotificationToRecentCache(notificationId);
-                    // used to calculate stats
-                    notification.displayed = new Date().valueOf();
-                    // this will mark as received and fire a local event so not sure I want to add in like this ...
-                    // flag to not publish a local event !!!                            
 
-                    donkyPushLogic.processPushMessage(notification, false);
-
-                    donkyPushLogic.setSimplePushResult(notification.id, result.additionalData.ButtonClicked);
+                if(result.additionalData.type !== "NOTIFICATIONPENDING"){
+                    // need to synthesise a server notification so we can call _processServerNotifications() if neessary ...                    
+                    var notification = {
+                        id: notificationId,
+                        type: result.additionalData.notificationType,
+                        data: result.additionalData.payload,
+                        createdOn: result.additionalData.notificationCreatedOn ? result.additionalData.notificationCreatedOn : new Date().toISOString()
+                    };
                     
+                    // Is this a button click                                        
+                    if(result.additionalData.ButtonClicked){
+                        
+                        pluginLog("processGCMPushMessage: ButtonClicked=" + result.additionalData.ButtonClicked);
+                        
+                        donkyCore.addNotificationToRecentCache(notificationId);
+                        // used to calculate stats
+                        notification.displayed = new Date().valueOf();
+                        // this will mark as received and fire a local event so not sure I want to add in like this ...
+                        // flag to not publish a local event !!!                            
+
+                        donkyPushLogic.processPushMessage(notification, false);
+
+                        donkyPushLogic.setSimplePushResult(notification.id, result.additionalData.ButtonClicked);
+                        
+                    }else{
+
+                        if( result.additionalData.notificationType === "SimplePushMessage" && applicationState !== AppStates.active){
+                            donkyCore.addNotificationToRecentCache(notification.id);
+                            donkyCore._queueAcknowledgement(notification, "Delivered");
+                        }
+                        else{
+                            donkyCore._processServerNotifications([notification]);    
+                        }                                     
+                    }
                 }else{
 
-                    if( result.additionalData.notificationType === "SimplePushMessage" && applicationState !== AppStates.active){
-                        donkyCore.addNotificationToRecentCache(notification.id);
-                        donkyCore._queueAcknowledgement(notification, "Delivered");
-                    }
-                    else{
-                        donkyCore._processServerNotifications([notification]);    
-                    }                                     
+                    // some messages not currently coming through s direct delivery so need to be got 
+                    donkyCore.donkyNetwork.getServerNotification(notificationId, function(notification){
+                        donkyCore._processServerNotifications([notification]);
+                    });
                 }
             }
         }                           
@@ -182,7 +191,7 @@ function DonkyPlugin(){
     /**
      * 
      */
-    function procesAPNSPushMessage(userInfo, applicationState){
+    function processAPNSPushMessage(userInfo, applicationState){
         
         var notificationId = userInfo.notificationId;
 
@@ -295,26 +304,14 @@ function DonkyPlugin(){
 
     
         /**
-         * 
+         * Donky events that need a sync of the badge count 
          */
-        donkyCore.subscribeToLocalEvent("PushMessageDeleted", function (event) {
-            syncBadgeCount();
-        });                
-        
-        /**
-         * 
-         */
-        donkyCore.subscribeToLocalEvent("RichMessageRead", function (event) {
-            syncBadgeCount();
-        });         
+        donkyCore.subscribeToLocalEvent("PushMessageDeleted", function (event){ syncBadgeCount(); });
+        donkyCore.subscribeToLocalEvent("RichMessageRead", function (event){ syncBadgeCount(); });
+        donkyCore.subscribeToLocalEvent("RichMessageDeleted", function (event){ syncBadgeCount(); });
+        donkyCore.subscribeToLocalEvent("SyncRichMessagesRead", function (event){ syncBadgeCount(); });
+        donkyCore.subscribeToLocalEvent("SyncRichMessagesDeleted", function (event){ syncBadgeCount(); });
 
-        /**
-         * 
-         */
-        donkyCore.subscribeToLocalEvent("RichMessageDeleted", function (event) {
-            syncBadgeCount();
-        });         
-               
         /**
          * A button has been clicked (iOS)
          * App stae would have been UIApplicationStateInactive
@@ -401,7 +398,7 @@ function DonkyPlugin(){
                 switch( self.platform ){
                     case "iOS":
                         if(result.userInfo.notificationId !== undefined){
-                            procesAPNSPushMessage(result.userInfo, result.applicationState);
+                            processAPNSPushMessage(result.userInfo, result.applicationState);
                         }
                     break;
                     
@@ -411,7 +408,7 @@ function DonkyPlugin(){
                      * We should have all we need to call setSimplePushResult() 
                      */                                
                     case "Android":
-                        procesGCMPushMessage(result);
+                        processGCMPushMessage(result);
                     break;
                 }
             }
