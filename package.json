@@ -1,0 +1,37 @@
+{
+    "version": "1.0.0",
+    "name": "cordova-plugin-donky-jsmodular",
+    "cordova_name": "Donky Javascript Modular SDK Cordova Plugin",
+    "description": "This plugin allows you to receive push notifications and interactive push notifications, feedback the analytics and optionally display them. Powered by Donky (www.donkynetworks.com)",
+    "author": "Donky",
+    "license": "MIT",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/Donky-Network/cordova-plugin-donky-jsmodular.git"
+    },
+    "cordova": {
+        "id": "cordova-plugin-donky-jsmodular",
+        "platforms": [
+          "android",
+          "ios"
+        ]
+    },
+    "issue": "https://github.com/Donky-Network/cordova-plugin-donky-jsmodular/issues",
+    "keywords": [
+        "ecosystem:cordova",
+        "cordova",
+        "phonegap",
+        "cordova-ios",
+        "cordova-android",
+        "push",
+        "notifications"
+    ],
+    "engines": [
+        {
+            "name": "cordova",
+            "version": ">=3.0.0"
+        }
+    ],
+    "dependencies": {
+    }
+}
