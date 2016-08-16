@@ -3,6 +3,9 @@
  */
 function DonkyPlugin(){
 
+    // NOTE: ensure this remains in sync with the value in package.json
+    var pluginVersion = "1.0.0";
+
     var AppStates = {
         active: 0,
         inactive: 1,
@@ -579,6 +582,13 @@ function DonkyPlugin(){
 
                             donkyCore.donkyAccount._setOperatingSystem(self.platform);
                             donkyCore.donkyAccount._setDeviceId(self.deviceId);
+
+                            var module = {  
+                                name: "cordova-plugin-donky-jsmodular", 
+                                version: pluginVersion 
+                            };
+
+                            donkyCore.registerModule(module);	
 
                             subscribeToDonkyEvents();
 
