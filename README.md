@@ -250,7 +250,7 @@ it will use this API with a native location tracking sensors therefore you get t
 $ cordova plugin add cordova-plugin-geolocation
 ```
 # Sample Apps
-}
+
 Various sample projects can be found on Github, including popular frameworks such as <a href="http://ionicframework.com/" target="_new">Ionic</a> and <a href="https://angularjs.org/" target="_new">Angular</a> here:
 
 <a href="https://github.com/Donky-Network/Donky-Cordova-JSModular-Samples" target="_new">https://github.com/Donky-Network/Donky-Cordova-JSModular-Samples</a>
