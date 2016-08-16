@@ -4,7 +4,7 @@
 function DonkyPlugin(){
 
     // NOTE: ensure this remains in sync with the value in package.json
-    var pluginVersion = "1.0.0";
+    var pluginVersion = "1.0.1";
 
     var AppStates = {
         active: 0,
@@ -418,7 +418,7 @@ function DonkyPlugin(){
                                                             
         }, function(error){
             pluginLog("registerForPush failed" + JSON.stringify(error));
-            donkyCore.publishLocalEvent({ type: "registerForPush", data: {succeded: false, error: error} });
+            donkyCore.publishLocalEvent({ type: "registerForPush", data: {succeeded: false, error: error} });
         },
         "donky", "registerForPush",
         self.platform === "iOS" ? [JSON.stringify(donkyCore.getiOSButtonCategories())] : [configuration.configurationItems.DefaultGCMSenderId]);
