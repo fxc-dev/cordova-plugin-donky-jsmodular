@@ -52,11 +52,13 @@ This bundle contains all of the Donky logic modules apart from the donkyCoreAnal
 The Logic Bundle can be downloaded from here:
 
 https://cdn.dnky.co/sdk/2.2.3.1/modules/donkyLogicBundle.js
+
 https://cdn.dnky.co/sdk/2.2.3.1/modules/donkyLogicBundle.min.js
 
-or for the ltest verion ...
+or for the latest verion ...
 
 https://cdn.dnky.co/sdk/latest-modular/modules/donkyLogicBundle.js
+
 https://cdn.dnky.co/sdk/latest-modular/modules/donkyLogicBundle.min.js
 
 
@@ -92,7 +94,7 @@ You need to do the following in sequence:
 2) Initialise the Donky plugin
 3) Initialise the Donky SDK
 
-As can be seen, a [**pushOptions **](doc:cordova-plugin#section-push-options)  object is passed into the initialise method which allows the customisation of the native push message.
+As can be seen, a [**pushOptions**](doc:cordova-plugin#section-push-options)  object is passed into the initialise method which allows the customisation of the native push message.
 
 ```javascript
 
