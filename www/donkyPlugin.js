@@ -4,7 +4,7 @@
 function DonkyPlugin(){
 
     // NOTE: ensure this remains in sync with the value in package.json
-    var pluginVersion = "1.0.2";
+    var pluginVersion = "1.0.3";
 
     var AppStates = {
         active: 0,
@@ -395,7 +395,7 @@ function DonkyPlugin(){
             // success callback re-used for push notifications and returning device token                                                 
             if(result.deviceToken){
                 sendPushConfiguration(result.deviceToken);
-                donkyCore.publishLocalEvent({ type: "registerForPush", data: {succeded: true, token: result.deviceToken} });
+                donkyCore.publishLocalEvent({ type: "registerForPush", data: {succeeded: true, token: result.deviceToken} });
             }else{
 
                 switch( self.platform ){
