@@ -3,7 +3,7 @@
 xmlns="http://apache.org/cordova/ns/plugins/1.0"
     xmlns:android="http://schemas.android.com/apk/res/android"
     id="cordova-plugin-donky-jsmodular"
-    version="1.0.3">
+    version="1.0.4">
 
     <name>Donky</name>
     <description>Cordova Donky JSModular Plugin</description>
@@ -15,10 +15,11 @@ xmlns="http://apache.org/cordova/ns/plugins/1.0"
     </js-module>
 
 
-    <preference name="SENDER_ID" default="_DONKY_DEFAULT_" />
 
     <!-- android -->
     <platform name="android">
+
+        <preference name="SENDER_ID" default="_DONKY_DEFAULT_" />
 
         <config-file target="res/xml/config.xml" parent="/*">
             <feature name="donky" >
