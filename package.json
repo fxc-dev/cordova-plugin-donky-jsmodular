@@ -1,5 +1,5 @@
 {
-    "version": "1.0.4",
+    "version": "1.0.5",
     "name": "cordova-plugin-donky-jsmodular",
     "cordova_name": "Donky Cordova Plugin (Javascript Modular SDK)",
     "description": "Cordova plugin to enable the use of the Donky Javascript SDK in your mobile apps",
@@ -12,8 +12,8 @@
     "cordova": {
         "id": "cordova-plugin-donky-jsmodular",
         "platforms": [
-          "android",
-          "ios"
+            "android",
+            "ios"
         ]
     },
     "issue": "https://github.com/Donky-Network/cordova-plugin-donky-jsmodular/issues",
@@ -32,6 +32,5 @@
             "version": ">=3.0.0"
         }
     ],
-    "dependencies": {
-    }
+    "dependencies": {}
 }
