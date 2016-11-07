@@ -51,9 +51,9 @@ This bundle contains all of the Donky logic modules apart from the donkyCoreAnal
 
 The Logic Bundle can be downloaded from here:
 
-https://cdn.dnky.co/sdk/2.2.3.1/modules/donkyLogicBundle.js
+https://cdn.dnky.co/sdk/2.2.3.3/modules/donkyLogicBundle.js
 
-https://cdn.dnky.co/sdk/2.2.3.1/modules/donkyLogicBundle.min.js
+https://cdn.dnky.co/sdk/2.2.3.3/modules/donkyLogicBundle.min.js
 
 or for the latest verion ...
 
