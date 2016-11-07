@@ -4,7 +4,7 @@
 function DonkyPlugin() {
 
     // NOTE: ensure this remains in sync with the value in package.json
-    var pluginVersion = "1.0.5";
+    var pluginVersion = "1.0.6";
 
     var AppStates = {
         active: 0,
@@ -84,22 +84,29 @@ function DonkyPlugin() {
     }
 
     /**
-     * FUnction to quere an AppLaunch notification 
+     * Function to queue an AppLaunch notification 
      */
     function queueAppLaunch() {
 
-        var launchClientNotification = {
-            Type: "AppLaunch",
-            "launchTimeUtc": self.launchTimeUtc,
-            "operatingSystem": donkyCore.donkyAccount._getOperatingSystem(),
-            "sessionTrigger": (self.applicationStateOnPush !== undefined && self.applicationStateOnPush !== AppStates.active) ? "Notification" : "None"
-        };
+        // To correctly identify whether this was an influenced launch, we need to look at the applicationStateOnPush which is getting set when the notification arrives
+        // need to defer this logic to so this is called AFTER the push message has been processed
 
-        pluginLog("queueAppLaunch: " + JSON.stringify(launchClientNotification));
+        setTimeout(function () {
 
-        donkyCore.queueClientNotifications(launchClientNotification);
+            var launchClientNotification = {
+                Type: "AppLaunch",
+                "launchTimeUtc": self.launchTimeUtc,
+                "operatingSystem": donkyCore.donkyAccount._getOperatingSystem(),
+                "sessionTrigger": (self.applicationStateOnPush !== undefined && self.applicationStateOnPush !== AppStates.active) ? "Notification" : "None"
+            };
 
-        donkyCore.donkyNetwork.synchronise(function (result) { });
+            pluginLog("queueAppLaunch: " + JSON.stringify(launchClientNotification));
+
+            donkyCore.queueClientNotifications(launchClientNotification);
+
+            donkyCore.donkyNetwork.synchronise(function (result) { });
+        }, 1000);
+
     }
 
     /**
@@ -133,6 +140,8 @@ function DonkyPlugin() {
      *
      */
     function processGCMPushMessage(result) {
+
+        pluginLog("processGCMPushMessage: " + JSON.stringify(result));
 
         var notificationId = result.additionalData.notificationId;
 
@@ -276,14 +285,11 @@ function DonkyPlugin() {
 
 
         document.addEventListener("pause", function () {
+            pluginLog("pause");
+
             // queue an AppSession 
             queueAppSession();
 
-            if (donkyCore.donkyNetwork._usingSignalR()) {
-                donkyCore.donkyNetwork._stopSignalR(function () {
-                    pluginLog("signalR stopped");
-                });
-            }
 
         }, false);
 
@@ -292,17 +298,12 @@ function DonkyPlugin() {
         * Foreground event comes in before push event (which contains app state) - hence the setTimeout() usage 
         */
         document.addEventListener("resume", function () {
+            pluginLog("resume");
+
             self.launchTimeUtc = new Date().toISOString();
 
-            if (donkyCore.donkyNetwork._usingSignalR()) {
-                donkyCore.donkyNetwork._startSignalR(function () {
-                    pluginLog("signalR started");
-                });
-            }
+            queueAppLaunch();
 
-            setTimeout(function () {
-                queueAppLaunch();
-            }, 1000);
         }, false);
 
 
@@ -463,9 +464,12 @@ function DonkyPlugin() {
             if (window.donkyCore) {
 
                 donkyCore._each(coldStartActions, function (index, notification) {
-                    // handleButtonAction(notification.notificationId, notification.label);
-                    // This should prevent the notification getting reprocessed
-                    donkyCore.addNotificationToRecentCache(notification.notificationId);
+                    // This will prevent the notification getting reprocessed
+                    // only do this for push messages
+                    if (notification.notificationType === "SIMPLEPUSHMSG") {
+                        pluginLog("adding Notification " + notification.notificationId + " To RecentCache");
+                        donkyCore.addNotificationToRecentCache(notification.notificationId);
+                    }
 
                     var dif = (now - new Date(notification.clicked)) / 1000;
 

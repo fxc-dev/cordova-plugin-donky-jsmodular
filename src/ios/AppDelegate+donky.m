@@ -95,6 +95,7 @@ static char coldstartKey;
     
     if (self.launchNotification) {
         donkyPlugin.coldstart = [self.coldstart boolValue];
+        NSLog(@"setting donkyPlugin.launchNotification to %@", donkyPlugin.launchNotification);
         donkyPlugin.launchNotification = self.launchNotification;
 
         self.coldstart = [NSNumber numberWithBool:NO];

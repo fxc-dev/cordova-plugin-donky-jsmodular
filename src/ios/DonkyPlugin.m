@@ -7,7 +7,7 @@
 #import "NSDictionary+DNJsonDictionary.h"
 
 
-static NSString *const DNDeviceID = @"DeviceID"; 
+static NSString *const DNDeviceID = @"DeviceID";
 
 #define SYSTEM_VERSION_PLIST    @"/System/Library/CoreServices/SystemVersion.plist"
 
@@ -32,7 +32,7 @@ static UIWebView* webView;
     
     if (self.webViewEngine != nil) {
         webView = (UIWebView *)self.webViewEngine.engineWebView;
-    }    
+    }
 }
 
 - (NSString*)modelVersion
@@ -53,7 +53,7 @@ static UIWebView* webView;
     NSDateFormatter* dateFormatter = [[NSDateFormatter alloc] init];
     [dateFormatter setLocale:[NSLocale localeWithLocaleIdentifier:@"en_US_POSIX"]];
     [dateFormatter setDateFormat:@"yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"];
-    [dateFormatter setTimeZone:[NSTimeZone timeZoneWithAbbreviation:@"UTC"]];    
+    [dateFormatter setTimeZone:[NSTimeZone timeZoneWithAbbreviation:@"UTC"]];
     return [dateFormatter stringFromDate:[NSDate date]];
 }
 
@@ -63,7 +63,7 @@ static UIWebView* webView;
     
     // Check command.arguments here.
     [self.commandDelegate runInBackground:^{
-
+        
         NSLog(@"Donky::getPlatformInfo");
         NSString *deviceId = [DNKeychainHelper objectForKey:DNDeviceID];
         NSLog(@"DNKeychainHelper returned deviceId: %@", deviceId);
@@ -88,6 +88,8 @@ static UIWebView* webView;
         [devProps setObject:[NSNumber numberWithBool:[self coldstart]] forKey:@"coldstart"];
         if([self launchNotification] != nil){
             
+            NSLog(@"DonkyPlugin::initialise launchNotification=%@", launchNotification);
+            
             NSString *inttype = [launchNotification objectForKey:@"inttype"];
             
             NSLog(@"inttype: %@", inttype);
@@ -105,7 +107,7 @@ static UIWebView* webView;
                     NSString *action = [launchNotification objectForKey:@"act1"];
                     NSString *link1 = [launchNotification objectForKey:@"link1"];
                     
-                    [self addColdstartNotification: notificationId :label :action];
+                    [self addColdstartNotification: notificationId : notificationType:label :action];
                     
                     // if we have a 1 button push that is supposed to open a deep link, should I process it here of give it to the app to deal with ?
                     if([action isEqualToString:@"DeepLink"]){
@@ -118,10 +120,12 @@ static UIWebView* webView;
                     }
                     
                 }else{
-                    [self addColdstartNotification: notificationId :nil :nil];
+                    [self addColdstartNotification: notificationId :notificationType :nil :nil];
                 }
                 
                 
+            }else{
+                [self addColdstartNotification: notificationId :notificationType :nil :nil];                
             }
             [devProps setObject:[self launchNotification] forKey:@"launchNotification"];
         }
@@ -138,12 +142,14 @@ static UIWebView* webView;
         
         [devProps setObject:[DonkyPlugin getCurrentTimestamp] forKey:@"launchTimeUtc"];
         
+        NSLog(@"DonkyPlugin::initialise devProps=%@", devProps);
+        
         CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:devProps];
         
         [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
     }];
-        
-
+    
+    
 }
 
 - (void)hasPermission:(CDVInvokedUrlCommand *)command
@@ -165,10 +171,10 @@ static UIWebView* webView;
     NSLog(@"Donky::registerForPush");
     
     self.callbackId = command.callbackId;
-
+    
     // Check command.arguments here.
     [self.commandDelegate runInBackground:^{
-
+        
         BOOL error = FALSE;
         NSString *errorMessage = nil;
         
@@ -218,8 +224,8 @@ static UIWebView* webView;
         }
         
         NSLog(@"error = %d", error);
-    
-    
+        
+        
     }];
 }
 
@@ -229,8 +235,8 @@ static UIWebView* webView;
     [[UIApplication sharedApplication] unregisterForRemoteNotifications];
     
     CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:@"unregistered"];
-
-    [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];    
+    
+    [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
 }
 
 - (void)didRegisterForRemoteNotificationsWithDeviceToken:(NSData *)deviceToken {
@@ -252,7 +258,7 @@ static UIWebView* webView;
             [hexString appendString:[NSString stringWithFormat:@"%02lx", (unsigned long) dataBuffer[i]]];
         }
     }
-
+    
     NSDictionary *message = [[NSDictionary alloc] initWithObjectsAndKeys: hexString, @"deviceToken", nil];
     
     CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:message];
@@ -266,13 +272,13 @@ static UIWebView* webView;
         NSLog(@"Unexpected call to didFailToRegisterForRemoteNotificationsWithError, ignoring: %@", error);
         return;
     }
-
+    
     NSDictionary *message = [[NSDictionary alloc] initWithObjectsAndKeys: [error localizedDescription], @"message", nil];
     
     CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsDictionary:message];
     [pluginResult setKeepCallbackAsBool:YES];
     [self.commandDelegate sendPluginResult:pluginResult callbackId:self.callbackId];
-
+    
 }
 
 - (void)didRegisterUserNotificationSettings:(nonnull UIUserNotificationSettings *)notificationSettings{
@@ -286,7 +292,7 @@ static UIWebView* webView;
 
 
 
-- (void) setBadgeCount:(CDVInvokedUrlCommand*)command; 
+- (void) setBadgeCount:(CDVInvokedUrlCommand*)command;
 {
     NSLog(@"Donky::setBadgeCount");
     NSString* badgeCount = [[command arguments] objectAtIndex:0];
@@ -296,7 +302,7 @@ static UIWebView* webView;
     CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK];
     
     [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
-        
+    
 }
 
 - (void)openDeepLink:(CDVInvokedUrlCommand*)command;
@@ -323,7 +329,7 @@ static UIWebView* webView;
 + (Boolean)openDeepLink:(NSURL*)url;
 {
     NSLog(@"handleDeepLink: Opening link: %@", url);
-
+    
     Boolean canOpen = [[UIApplication sharedApplication] canOpenURL:url];
     
     if (canOpen) {
@@ -386,6 +392,8 @@ static UIWebView* webView;
         NSString *inttype = [userInfo objectForKey:@"inttype"];
         
         NSString *notificationId = [userInfo objectForKey:@"notificationId"];
+        NSString *notificationType = [userInfo objectForKey:@"notificationType"];
+        
         
         if([inttype isEqualToString:@"TwoButton"])
         {
@@ -415,7 +423,7 @@ static UIWebView* webView;
             }
         }
         
-        [self addColdstartNotification: notificationId :label :action];
+        [self addColdstartNotification: notificationId :notificationType :label :action];
         
         
         if([action isEqualToString:@"DeepLink"]){
@@ -431,7 +439,7 @@ static UIWebView* webView;
             
         }
     }
-
+    
     // NOTE: if I call this when the app is in state UIApplicationStateBackground, it fires when resumed ...
     
     if([[UIApplication sharedApplication] applicationState] != UIApplicationStateBackground){
@@ -443,16 +451,16 @@ static UIWebView* webView;
 
 
 // {"notificationId": "", "label": "dismiss", "action": "D"}|
-- (void) addColdstartNotification :(NSString *)notificationId :(NSString *) label :(NSString *) action{
-
+- (void) addColdstartNotification :(NSString *)notificationId :(NSString *) notificationType :(NSString *) label :(NSString *) action{
+    
     NSString *savedColdstartNotifications = [[NSUserDefaults standardUserDefaults] stringForKey:@"coldstartNotifications"];
     
     NSString *json;
     
     if(label!=nil){
-        json = [NSString stringWithFormat:@"{\"notificationId\":\"%@\",\"label\":\"%@\",\"action\":\"%@\", \"clicked\":\"%@\"}", notificationId, label, action, [DonkyPlugin getCurrentTimestamp]];
+        json = [NSString stringWithFormat:@"{\"notificationId\":\"%@\",\"notificationType\":\"%@\",\"label\":\"%@\",\"action\":\"%@\", \"clicked\":\"%@\"}", notificationId, notificationType, label, action, [DonkyPlugin getCurrentTimestamp]];
     }else{
-        json = [NSString stringWithFormat:@"{\"notificationId\":\"%@\", \"clicked\":\"%@\"}", notificationId, [DonkyPlugin getCurrentTimestamp]];
+        json = [NSString stringWithFormat:@"{\"notificationId\":\"%@\",\"notificationType\":\"%@\", \"clicked\":\"%@\"}", notificationId, notificationType, [DonkyPlugin getCurrentTimestamp]];
     }
     
     NSLog(@"addColdstartNotification: %@", json);
@@ -469,13 +477,13 @@ static UIWebView* webView;
     
     [[NSUserDefaults standardUserDefaults] setObject:valueToSave forKey:@"coldstartNotifications"];
     [[NSUserDefaults standardUserDefaults] synchronize];
-
-
+    
+    
 }
 
 
 + (void) executeJavascript:(NSString *)jsString{
-
+    
     if ([webView respondsToSelector:@selector(stringByEvaluatingJavaScriptFromString:)]) {
         // Cordova-iOS pre-4
         [webView performSelectorOnMainThread:@selector(stringByEvaluatingJavaScriptFromString:) withObject:jsString waitUntilDone:NO];
@@ -494,7 +502,7 @@ static UIWebView* webView;
     if(webView){
         
         NSString *jsonString = [data jsonString];
-
+        
         if(jsonString){
             NSString* jsString = [NSString stringWithFormat:@"window.cordova.plugins.donkyPlugin.callback(\'%@\',%@);", event, jsonString];
             
@@ -508,7 +516,7 @@ static UIWebView* webView;
             NSLog(@"%@", jsString);
             
             [DonkyPlugin executeJavascript: jsString];
-
+            
         }
     }
     
