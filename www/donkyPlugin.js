@@ -518,7 +518,10 @@ function DonkyPlugin() {
 
         queueAppLaunch();
 
-        doPushRegistation();
+        // Skip push registration if the user prefers to do it manually later on (via `.registerPush()`)
+        if (self.explicitPushRegistration !== true) {
+            doPushRegistation();
+        }
     }
 
     /**
@@ -632,6 +635,14 @@ function DonkyPlugin() {
             "donky", "initialise", [options]);
     }
 
+    /**
+     * Invoke push registration manually (the `explicitPushRegistration` option should be set to `true`)
+     */
+    DonkyPlugin.prototype.registerPush = function () {
+        if (self.explicitPushRegistration === true) {
+            doPushRegistation();
+        }
+    };
 
     /**
      * Method to allow integrator to request whether user has granted permission to access Notifications
