@@ -3,20 +3,22 @@
 xmlns="http://apache.org/cordova/ns/plugins/1.0"
     xmlns:android="http://schemas.android.com/apk/res/android"
     id="cordova-plugin-donky-jsmodular"
-    version="1.0.6">
+    version="1.0.7">
 
-    <name>Donky</name>
-    <description>Cordova Donky JSModular Plugin</description>
+    <name>Comapi Inbox Cordova SDK</name>
+    <description>Cordova Comapi Inbox (Donky) JSModular Plugin</description>
+    <author>Comapi</author>
     <license>Apache 2.0</license>
-    <keywords>cordova,donky</keywords>
+    <keywords>cordova,comapi,inbox,donky</keywords>
 
+    <!-- Plugin -->
     <js-module src="www/donkyPlugin.js" name="donky">
         <clobbers target="cordova.plugins.donkyPlugin" />
     </js-module>
 
+    <asset src="www/donkyLogicBundle.min.js" target="lib/donky/js/donkyLogicBundle.min.js" />
 
-
-    <!-- android -->
+    <!-- Android -->
     <platform name="android">
 
         <preference name="SENDER_ID" default="_DONKY_DEFAULT_" />
@@ -88,8 +90,6 @@ xmlns="http://apache.org/cordova/ns/plugins/1.0"
         <source-file src="src/android/PermissionUtils.java" target-dir="src/com/donky/plugin/" />
     </platform>
 
-  
-  
   <platform name="ios">
     
     <config-file target="config.xml" parent="/widget">

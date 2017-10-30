@@ -4,7 +4,7 @@
 function DonkyPlugin() {
 
     // NOTE: ensure this remains in sync with the value in package.json
-    var pluginVersion = "1.0.6";
+    var pluginVersion = "1.0.7";
 
     var AppStates = {
         active: 0,
