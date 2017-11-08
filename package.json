@@ -1,5 +1,5 @@
 {
-    "version": "1.0.7",
+    "version": "1.0.8",
     "name": "cordova-plugin-donky-jsmodular",
     "cordova_name": "Comapi Inbox (Donky) Cordova Plugin (Javascript Modular SDK)",
     "description": "Cordova plugin to enable the use of the Comapi Inbox (Donky) Javascript SDK in your mobile apps",

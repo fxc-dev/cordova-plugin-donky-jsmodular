@@ -4,7 +4,7 @@
 function DonkyPlugin() {
 
     // NOTE: ensure this remains in sync with the value in package.json
-    var pluginVersion = "1.0.7";
+    var pluginVersion = "1.0.8";
 
     var AppStates = {
         active: 0,
@@ -227,6 +227,9 @@ function DonkyPlugin() {
 
                         if (userInfo.inttype === "OneButton") {
                             handleButtonAction(notificationId, userInfo.lbl1, new Date().toISOString(), false);
+                            if (userInfo.act1 === "DeepLink") {
+                                self.openDeepLink(function () { }, function () { }, userInfo.link1);
+                            }
                         }
 
                     } else {
