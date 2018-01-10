@@ -4,7 +4,7 @@
 function DonkyPlugin() {
 
     // NOTE: ensure this remains in sync with the value in package.json
-    var pluginVersion = "1.0.8";
+    var pluginVersion = "1.0.9";
 
     var AppStates = {
         active: 0,
@@ -313,6 +313,8 @@ function DonkyPlugin() {
         /**
          * Donky events that need a sync of the badge count 
          */
+        donkyCore.subscribeToLocalEvent("NewSimplePushMessagesReceived", function (event) { syncBadgeCount(); });
+        donkyCore.subscribeToLocalEvent("NewRichMessagesReceived", function (event) { syncBadgeCount(); });
         donkyCore.subscribeToLocalEvent("PushMessageDeleted", function (event) { syncBadgeCount(); });
         donkyCore.subscribeToLocalEvent("RichMessageRead", function (event) { syncBadgeCount(); });
         donkyCore.subscribeToLocalEvent("RichMessageDeleted", function (event) { syncBadgeCount(); });
@@ -518,6 +520,8 @@ function DonkyPlugin() {
     function onDonkyInitialised() {
 
         queueColdstartAnalytics();
+
+        syncBadgeCount();
 
         queueAppLaunch();
 
