@@ -276,13 +276,14 @@ public class GCMIntentService extends GcmListenerService implements PushConstant
 
             mBuilder.setContentText(body);
 
+            mBuilder.setStyle(new NotificationCompat.BigTextStyle().bigText(body).setBigContentTitle(senderDisplayName));
+
             mBuilder.setNumber(0);
 
             if(avatarAssetId != ""){
                 mBuilder.setLargeIcon(getBitmapFromURL("https://" + environment + "client-api.mobiledonky.com/asset/" + avatarAssetId));
             }
             
-
             // message type specifics ...
 
             if(messageType.equals("SimplePush")){
