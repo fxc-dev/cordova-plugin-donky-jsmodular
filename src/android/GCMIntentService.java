@@ -6,6 +6,7 @@ import android.content.SharedPreferences;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.os.Build;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.util.Log;
@@ -20,6 +21,7 @@ import java.util.Random;
 
 import android.app.Notification;
 import android.app.NotificationManager;
+import android.app.NotificationChannel;
 
 import android.content.Context;
 
@@ -238,8 +240,15 @@ public class GCMIntentService extends GcmListenerService implements PushConstant
             NotificationManager mNotificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
             String appName = (String) context.getPackageManager().getApplicationLabel(context.getApplicationInfo());
 
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                NotificationChannel channel = new NotificationChannel("DonkyNotifyChannel",
+                        "Donky push channel",
+                        NotificationManager.IMPORTANCE_DEFAULT);
+                mNotificationManager.createNotificationChannel(channel);
+            }
+
             NotificationCompat.Builder mBuilder =
-                    new NotificationCompat.Builder(context)
+                    new NotificationCompat.Builder(context, "DonkyNotifyChannel")
                             .setWhen(System.currentTimeMillis())
                             .setContentTitle(senderDisplayName)
                             .setTicker(senderDisplayName);
